@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PrepSec+ V5.2 | CompTIA Security+ (SY0-701) Command Center</title>
+  <title>PrepSec+ V7 | CompTIA Security+ (SY0-701) Command Center</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -97,7 +97,7 @@
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <h1 class="text-base sm:text-lg font-bold tracking-tight text-white">PrepSec+ V5.2</h1>
+            <h1 class="text-base sm:text-lg font-bold tracking-tight text-white">PrepSec+ V7</h1>
             <span class="px-2 py-0.5 text-[11px] font-semibold rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">SY0-701</span>
           </div>
           <p class="text-xs text-slate-400">CompTIA Security+ Command Center &bull; Deep Schema Sync</p>
@@ -109,6 +109,7 @@
           <span id="engine-status-dot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
           <span id="engine-status-text">Initializing Engine...</span>
         </div>
+        <button id="cloud-btn" data-action="cloud-open" class="px-3 py-1.5 rounded-full text-xs font-semibold border transition bg-slate-800/90 text-slate-200 border-slate-700">☁ Sign in to sync</button>
         <button data-action="nav" data-tab="backup" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
           Backup &amp; Packs
         </button>
@@ -171,6 +172,17 @@
         <button data-action="exam-go-unanswered" id="btn-exam-go-unanswered" class="px-3.5 py-2 rounded-xl bg-amber-600/90 hover:bg-amber-500 text-xs font-bold text-white">Go to First Unanswered</button>
         <button data-action="exam-submit-final" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white">Submit Now</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Cloud sync modal -->
+  <div id="cloud-modal" class="hidden fixed inset-0 z-[65] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="glass-card rounded-2xl p-5 sm:p-6 w-full max-w-md space-y-3 border-indigo-500/40">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-bold text-white">Cloud sync</h3>
+        <button data-action="cloud-close" class="text-slate-400 hover:text-white text-sm px-2 py-0.5 rounded">✕</button>
+      </div>
+      <div id="cloud-modal-body" class="space-y-2"></div>
     </div>
   </div>
 
@@ -1505,6 +1517,7 @@
     function saveAppState(stateObj) {
       storageOk = safeStorage.setItem(STORAGE_KEY_V5, JSON.stringify(stateObj));
       if (typeof updateStatusPill === 'function') updateStatusPill();
+      if (typeof cloudOnLocalSave === 'function') cloudOnLocalSave();
     }
 
     // Generated (dyn_*) questions are not retrievable later, so they never enter the missed queue
@@ -2180,6 +2193,8 @@
       appState.overall.correct = [1, 2, 3, 4, 5].reduce((acc, d) => acc + appState.domains[d].correct, 0);
       appState.overall.total = [1, 2, 3, 4, 5].reduce((acc, d) => acc + appState.domains[d].total, 0);
       appState.examHistory.unshift({
+        id: 'x' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        ts: Date.now(),
         title: `Exam #${examSession.profile.num}`,
         pct,
         scaled,
@@ -3917,6 +3932,302 @@
     });
 
     /* =========================================================================
+       17b. CLOUD SYNC (Firebase auth + Firestore, per-record last-write-wins)
+       The firebase module script (end of file) exposes window.PrepSecFB.
+       The app keeps working with no account and no connection.
+       ========================================================================= */
+    var cloudState = null; // var on purpose: saveAppState runs during boot, before this block executes
+    const CLOUD_COLLS = ['stats', 'fc', 'pbq', 'note', 'exam', 'guide'];
+    const CLOUD_META_PREFIX = 'secplus_cloud_v1_';
+    const CLOUD_LASTUID_KEY = 'secplus_cloud_lastuid';
+    let cloudPushTimer = null;
+
+    function cloudFB() { return window.PrepSecFB || null; }
+
+    function cloudExamId(e) {
+      return e.id || ('h' + stableHash(`${e.title}|${e.date}|${e.scaled}|${e.pct}`));
+    }
+
+    function cloudDerive(state) {
+      const out = {};
+      const add = (coll, id, data) => {
+        out[`${coll}/${id}`] = { coll, id, str: JSON.stringify(data) };
+      };
+      add('stats', 'main', { domains: state.domains, overall: state.overall, missed: state.missedQuestionIds || [] });
+      for (const id of state.masteredFlashcards || []) add('fc', id, { v: true });
+      for (const id of state.solvedPBQs || []) add('pbq', id, { v: true });
+      for (const id of state.guideReviewed || []) add('guide', id, { v: true });
+      for (const n of state.notes || []) if (n && n.id) add('note', n.id, { note: n });
+      for (const e of state.examHistory || []) add('exam', cloudExamId(e), { entry: { ...e, id: cloudExamId(e) } });
+      return out;
+    }
+
+    function cloudLoadMeta(uid) {
+      try {
+        const raw = safeStorage.getItem(CLOUD_META_PREFIX + uid);
+        if (raw) {
+          const p = JSON.parse(raw);
+          if (p && p.ts && p.shadow) return p;
+        }
+      } catch (e) { /* ignore */ }
+      return { ts: {}, shadow: {} };
+    }
+
+    function cloudSaveMeta() {
+      if (!cloudState || !cloudState.uid) return;
+      safeStorage.setItem(CLOUD_META_PREFIX + cloudState.uid, JSON.stringify(cloudState.meta));
+    }
+
+    function cloudSetStatus(status, detail) {
+      if (!cloudState) return;
+      cloudState.status = status;
+      if (detail !== undefined) cloudState.detail = detail;
+      if (status === 'synced') cloudState.lastSync = Date.now();
+      cloudRender();
+    }
+
+    function cloudError(err) {
+      const code = (err && err.code) || '';
+      if (code === 'permission-denied') cloudSetStatus('error', 'Permission denied by the database rules. Check the Firestore rules from Part 3.');
+      else if (code === 'unavailable' || !navigator.onLine) cloudSetStatus('offline');
+      else cloudSetStatus('error', (err && err.message) || 'Sync error');
+    }
+
+    function cloudOnLocalSave() {
+      if (!cloudState || !cloudState.ready || !cloudState.uid) return;
+      clearTimeout(cloudPushTimer);
+      cloudPushTimer = setTimeout(cloudPushDiff, 400);
+    }
+
+    function cloudPushDiff() {
+      const cs = cloudState;
+      const FB = cloudFB();
+      if (!cs || !cs.ready || !cs.uid || !FB) return 0;
+      const cur = cloudDerive(appState);
+      const now = Date.now();
+      let n = 0;
+      for (const [key, rec] of Object.entries(cur)) {
+        if (cs.meta.shadow[key] === rec.str) continue;
+        cs.meta.ts[key] = now;
+        cs.meta.shadow[key] = rec.str;
+        const payload = { ...JSON.parse(rec.str), updatedAt: now };
+        Promise.resolve(FB.put(cs.uid, rec.coll, rec.id, payload)).catch(cloudError);
+        n += 1;
+      }
+      for (const key of Object.keys(cs.meta.shadow)) {
+        if (cur[key]) continue;
+        const slash = key.indexOf('/');
+        const coll = key.slice(0, slash);
+        const id = key.slice(slash + 1);
+        delete cs.meta.shadow[key];
+        if (coll === 'exam' || coll === 'stats') continue; // history is append-only; stats always exists
+        cs.meta.ts[key] = now;
+        const payload = coll === 'note' ? { deleted: true, updatedAt: now } : { v: false, updatedAt: now };
+        Promise.resolve(FB.put(cs.uid, coll, id, payload)).catch(cloudError);
+        n += 1;
+      }
+      if (n > 0) {
+        cloudSaveMeta();
+        cloudSetStatus('syncing');
+        Promise.resolve(FB.flush()).then(() => cloudSetStatus(navigator.onLine ? 'synced' : 'offline')).catch(cloudError);
+      }
+      return n;
+    }
+
+    function cloudApplyChanges(coll, changes) {
+      const cs = cloudState;
+      if (!cs || !cs.uid) return;
+      const touched = [];
+      for (const ch of changes) {
+        if (ch.type === 'removed') continue;
+        const d = ch.data || {};
+        const key = `${coll}/${ch.id}`;
+        const rts = Number(d.updatedAt || 0);
+        const lts = cs.meta.ts[key] || 0;
+        if (coll === 'stats') {
+          const remoteTotal = Number(d.overall && d.overall.total) || 0;
+          if (!lts && (Number(appState.overall.total) || 0) > remoteTotal) continue; // first sync: keep whichever side has more progress
+          if (lts && rts <= lts) continue;
+        } else if (rts <= lts) {
+          continue;
+        }
+
+        if (coll === 'stats') {
+          for (const dm of [1, 2, 3, 4, 5]) {
+            appState.domains[dm] = {
+              correct: Number(d.domains?.[dm]?.correct || 0),
+              total: Number(d.domains?.[dm]?.total || 0)
+            };
+          }
+          appState.overall.correct = [1, 2, 3, 4, 5].reduce((a, dm) => a + appState.domains[dm].correct, 0);
+          appState.overall.total = [1, 2, 3, 4, 5].reduce((a, dm) => a + appState.domains[dm].total, 0);
+          appState.missedQuestionIds = Array.isArray(d.missed) ? d.missed.filter((x) => typeof x === 'string') : [];
+        } else if (coll === 'fc' || coll === 'pbq' || coll === 'guide') {
+          const field = coll === 'fc' ? 'masteredFlashcards' : coll === 'pbq' ? 'solvedPBQs' : 'guideReviewed';
+          const list = appState[field] || [];
+          if (d.v) {
+            if (!list.includes(ch.id)) list.push(ch.id);
+            appState[field] = list;
+          } else {
+            appState[field] = list.filter((x) => x !== ch.id);
+          }
+        } else if (coll === 'note') {
+          if (d.deleted) appState.notes = appState.notes.filter((n) => n.id !== ch.id);
+          else if (d.note && d.note.id) {
+            const i = appState.notes.findIndex((n) => n.id === ch.id);
+            if (i >= 0) appState.notes[i] = d.note; else appState.notes.unshift(d.note);
+          }
+        } else if (coll === 'exam') {
+          if (d.entry && !appState.examHistory.some((e) => cloudExamId(e) === ch.id)) {
+            appState.examHistory.push(d.entry);
+            appState.examHistory.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+            appState.examHistory = appState.examHistory.slice(0, 25);
+          }
+        }
+        cs.meta.ts[key] = rts;
+        touched.push(key);
+      }
+      if (touched.length === 0) return;
+      const cur = cloudDerive(appState);
+      for (const key of touched) {
+        if (cur[key]) cs.meta.shadow[key] = cur[key].str; else delete cs.meta.shadow[key];
+      }
+      cloudSaveMeta();
+      saveAppState(appState);
+      cloudRefreshUI();
+    }
+
+    function cloudRefreshUI() {
+      try {
+        renderDashboard();
+        if (activeTab === 'notes') renderNotesTab();
+        if (activeTab === 'guide') renderStudyGuide();
+        if (activeTab === 'pbq') renderPbqLabTab();
+      } catch (e) { /* UI refresh is best-effort */ }
+    }
+
+    function cloudHasLocalProgress() {
+      return (appState.overall.total > 0) || appState.notes.length > 0 || appState.masteredFlashcards.length > 0 || appState.solvedPBQs.length > 0;
+    }
+
+    function cloudTeardown() {
+      if (cloudState && cloudState.unsub) { try { cloudState.unsub(); } catch (e) { /* ignore */ } }
+    }
+
+    function cloudOnAuth(user) {
+      cloudTeardown();
+      clearTimeout(cloudPushTimer);
+      if (!user) {
+        Object.assign(cloudState, { uid: null, user: null, ready: false, unsub: null, firstDone: {} });
+        cloudSetStatus('signed-out', '');
+        return;
+      }
+      const last = safeStorage.getItem(CLOUD_LASTUID_KEY);
+      if (last && last !== user.uid && cloudHasLocalProgress()) {
+        const ok = window.confirm('This browser already holds study progress from a different account. Merge it into the account you just signed in with?\n\nOK = merge it in\nCancel = sign out and keep things separate');
+        if (!ok) { cloudFB().signOut(); return; }
+      }
+      safeStorage.setItem(CLOUD_LASTUID_KEY, user.uid);
+      Object.assign(cloudState, { uid: user.uid, user, ready: false, firstDone: {}, meta: cloudLoadMeta(user.uid) });
+      cloudSetStatus('connecting', '');
+      cloudState.unsub = cloudFB().subscribe(
+        user.uid,
+        CLOUD_COLLS,
+        (coll, changes) => {
+          if (!cloudState || cloudState.uid !== user.uid) return;
+          cloudApplyChanges(coll, changes);
+          if (!cloudState.ready) {
+            cloudState.firstDone[coll] = true;
+            if (CLOUD_COLLS.every((c) => cloudState.firstDone[c])) {
+              cloudState.ready = true;
+              cloudPushDiff();
+              if (cloudState.status === 'connecting') cloudSetStatus(navigator.onLine ? 'synced' : 'offline');
+            }
+          }
+        },
+        (coll, err) => cloudError(err)
+      );
+    }
+
+    function cloudRender() {
+      if (!cloudState) return;
+      const btn = document.getElementById('cloud-btn');
+      const s = cloudState.status;
+      const labels = {
+        'signed-out': ['Sign in to sync', 'bg-slate-800/90 text-slate-200 border-slate-700'],
+        connecting: ['Connecting…', 'bg-amber-500/15 text-amber-300 border-amber-500/30'],
+        syncing: ['Syncing…', 'bg-amber-500/15 text-amber-300 border-amber-500/30'],
+        synced: ['Synced', 'bg-emerald-500/15 text-emerald-300 border-emerald-500/35'],
+        offline: ['Offline · will sync', 'bg-amber-500/15 text-amber-300 border-amber-500/30'],
+        error: ['Sync error', 'bg-rose-500/15 text-rose-300 border-rose-500/35'],
+        unavailable: ['Sync unavailable', 'bg-slate-800/90 text-slate-400 border-slate-700']
+      };
+      const [text, cls] = labels[s] || labels['signed-out'];
+      if (btn) {
+        btn.className = `px-3 py-1.5 rounded-full text-xs font-semibold border transition ${cls}`;
+        btn.textContent = `☁ ${text}`;
+      }
+      const body = document.getElementById('cloud-modal-body');
+      if (!body) return;
+      const u = cloudState.user;
+      const last = cloudState.lastSync ? new Date(cloudState.lastSync).toLocaleTimeString() : '—';
+      body.innerHTML = u ? `
+        <p class="text-xs text-slate-300">Signed in as <strong class="text-white">${escapeHTML(u.email || u.name || 'your account')}</strong></p>
+        <p class="text-xs text-slate-400">Status: <strong class="text-slate-200">${escapeHTML(text)}</strong> &bull; last sync ${escapeHTML(last)}</p>
+        ${cloudState.detail ? `<p class="text-xs text-rose-300">${escapeHTML(cloudState.detail)}</p>` : ''}
+        <p class="text-[11px] text-slate-500">Syncs quiz history, flashcards, PBQ progress, notes, exam history and study guide progress. Imported question packs stay on this device.</p>
+        <div class="flex flex-wrap gap-2 pt-1">
+          <button data-action="cloud-syncnow" class="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white">Sync now</button>
+          <button data-action="cloud-signout" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700">Sign out</button>
+        </div>` : `
+        <p class="text-xs text-slate-300">Sign in to keep your progress in sync between your phone and laptop. The app keeps working without an account; your progress then stays on this device only.</p>
+        ${s === 'unavailable' ? '<p class="text-xs text-amber-300">Sync could not load (you may be offline). Try again when connected.</p>' : ''}
+        ${cloudState.detail ? `<p class="text-xs text-rose-300">${escapeHTML(cloudState.detail)}</p>` : ''}
+        <button data-action="cloud-signin" class="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-xs font-bold text-slate-900">Sign in with Google</button>`;
+    }
+
+    function cloudInit() {
+      cloudState = { uid: null, user: null, ready: false, status: 'signed-out', detail: '', meta: { ts: {}, shadow: {} }, firstDone: {}, unsub: null, lastSync: 0 };
+      cloudRender();
+      const start = () => { cloudFB().onAuth(cloudOnAuth); };
+      if (cloudFB()) start();
+      else {
+        window.addEventListener('prepsec-fb-ready', start, { once: true });
+        setTimeout(() => { if (!cloudFB() && cloudState.status === 'signed-out') cloudSetStatus('unavailable'); }, 10000);
+      }
+      window.addEventListener('online', () => {
+        if (cloudState.uid) { cloudSetStatus('syncing'); Promise.resolve(cloudFB().flush()).then(() => cloudSetStatus('synced')).catch(cloudError); }
+      });
+      window.addEventListener('offline', () => { if (cloudState.uid) cloudSetStatus('offline'); });
+
+      document.addEventListener('click', async (e) => {
+        const btn = e.target.closest && e.target.closest('[data-action^="cloud-"]');
+        if (!btn) return;
+        const a = btn.dataset.action;
+        const modal = document.getElementById('cloud-modal');
+        if (a === 'cloud-open') { cloudRender(); modal.classList.remove('hidden'); }
+        else if (a === 'cloud-close') modal.classList.add('hidden');
+        else if (a === 'cloud-signin') {
+          if (!cloudFB()) { cloudSetStatus('unavailable'); return; }
+          cloudSetStatus('connecting', '');
+          try { await cloudFB().signIn(); } catch (err) {
+            cloudSetStatus('signed-out', err && err.code === 'auth/popup-closed-by-user' ? '' : `Sign-in failed: ${(err && (err.code || err.message)) || 'unknown error'}`);
+          }
+        } else if (a === 'cloud-signout') {
+          if (cloudFB()) await cloudFB().signOut();
+          modal.classList.add('hidden');
+        } else if (a === 'cloud-syncnow') {
+          if (!cloudState.ready) return;
+          cloudSetStatus('syncing');
+          cloudPushDiff();
+          Promise.resolve(cloudFB().flush()).then(() => cloudSetStatus(navigator.onLine ? 'synced' : 'offline')).catch(cloudError);
+        }
+      });
+    }
+
+    cloudInit();
+
+    /* =========================================================================
        18. INITIALIZATION & HEALTH BADGE UPDATE
        ========================================================================= */
     switchTab('dashboard');
@@ -3929,7 +4240,7 @@
       if (storageOk) {
         pill.className = 'flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/35';
         dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
-        text.textContent = 'V5.2 Engine Ready • Saved';
+        text.textContent = 'V7 Engine Ready • Saved';
       } else {
         pill.className = 'flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-rose-500/15 text-rose-300 border border-rose-500/35';
         dot.className = 'w-2 h-2 rounded-full bg-rose-400 animate-pulse';
@@ -3940,5 +4251,63 @@
   })();
   </script>
   <script>if ('serviceWorker' in navigator) { window.addEventListener('load', function () { navigator.serviceWorker.register('./sw.js').catch(function () {}); }); }</script>
+  <script type="module">
+    // PrepSec+ cloud transport (Firebase Auth + Firestore). The app works without it.
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, setDoc, onSnapshot, waitForPendingWrites } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCORjCVH-z5BQGA0Oxa3T1Zs1VDtnzYR_Y",
+      authDomain: "prepsec.firebaseapp.com",
+      projectId: "prepsec",
+      storageBucket: "prepsec.firebasestorage.app",
+      messagingSenderId: "308231423072",
+      appId: "1:308231423072:web:91daa8cfd0ed8d41672f05"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    let db;
+    try {
+      db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
+    } catch (e) {
+      db = initializeFirestore(app, {});
+    }
+
+    getRedirectResult(auth).catch(() => {});
+
+    window.PrepSecFB = {
+      onAuth(cb) {
+        return onAuthStateChanged(auth, (u) => cb(u ? { uid: u.uid, email: u.email, name: u.displayName } : null));
+      },
+      async signIn() {
+        const provider = new GoogleAuthProvider();
+        try {
+          await signInWithPopup(auth, provider);
+        } catch (e) {
+          if (['auth/popup-blocked', 'auth/operation-not-supported-in-this-environment', 'auth/web-storage-unsupported'].includes(e.code)) {
+            await signInWithRedirect(auth, provider);
+          } else {
+            throw e;
+          }
+        }
+      },
+      signOut() { return signOut(auth); },
+      subscribe(uid, colls, onChanges, onError) {
+        const unsubs = colls.map((c) =>
+          onSnapshot(
+            collection(db, 'users', uid, c),
+            (snap) => onChanges(c, snap.docChanges().map((ch) => ({ type: ch.type, id: ch.doc.id, data: ch.doc.data() })), snap.metadata.fromCache),
+            (err) => onError(c, err)
+          )
+        );
+        return () => unsubs.forEach((u) => u());
+      },
+      put(uid, c, id, data) { return setDoc(doc(db, 'users', uid, c, id), data); },
+      flush() { return waitForPendingWrites(db); }
+    };
+    window.dispatchEvent(new Event('prepsec-fb-ready'));
+  </script>
 </body>
 </html>

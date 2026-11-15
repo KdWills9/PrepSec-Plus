@@ -77,6 +77,12 @@
       box-shadow: 0 0 0 1px rgba(250, 204, 21, 0.45);
     }
   </style>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="PrepSec+">
+  <link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body class="min-h-screen flex flex-col antialiased selection:bg-indigo-500/30 selection:text-indigo-200">
 
@@ -3933,5 +3939,6 @@
     updateStatusPill();
   })();
   </script>
+  <script>if ('serviceWorker' in navigator) { window.addEventListener('load', function () { navigator.serviceWorker.register('./sw.js').catch(function () {}); }); }</script>
 </body>
 </html>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PrepSec+ V7 | CompTIA Security+ (SY0-701) Command Center</title>
+  <title>PrepSec+ V8 | CompTIA Security+ (SY0-701) Command Center</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -77,6 +77,7 @@
       box-shadow: 0 0 0 1px rgba(250, 204, 21, 0.45);
     }
   </style>
+  <style>.quiz-paused #quiz-question-stem, .quiz-paused #quiz-options-list, .quiz-paused #quiz-explanation-box, .quiz-paused #quiz-nav-row { display: none !important; }</style>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f172a">
   <meta name="mobile-web-app-capable" content="yes">
@@ -97,22 +98,15 @@
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <h1 class="text-base sm:text-lg font-bold tracking-tight text-white">PrepSec+ V7</h1>
+            <h1 class="text-base sm:text-lg font-bold tracking-tight text-white">PrepSec+ V8</h1>
             <span class="px-2 py-0.5 text-[11px] font-semibold rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">SY0-701</span>
           </div>
-          <p class="text-xs text-slate-400">CompTIA Security+ Command Center &bull; Deep Schema Sync</p>
+          <p class="text-xs text-slate-400">CompTIA Security+ SY0-701 Study Hub</p>
         </div>
       </div>
 
       <div class="flex items-center gap-2.5">
-        <div id="engine-status-pill" class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-amber-500/15 text-amber-300 border border-amber-500/30">
-          <span id="engine-status-dot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-          <span id="engine-status-text">Initializing Engine...</span>
-        </div>
-        <button id="cloud-btn" data-action="cloud-open" class="px-3 py-1.5 rounded-full text-xs font-semibold border transition bg-slate-800/90 text-slate-200 border-slate-700">☁ Sign in to sync</button>
-        <button data-action="nav" data-tab="backup" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
-          Backup &amp; Packs
-        </button>
+        <button id="cloud-btn" data-action="nav" data-tab="settings" class="px-3 py-1.5 rounded-full text-xs font-semibold border transition bg-slate-800/90 text-slate-200 border-slate-700">☁ Sign in to sync</button>
       </div>
     </div>
 
@@ -129,10 +123,15 @@
           <span id="nav-notes-badge" class="px-1.5 py-0.5 rounded-full text-[11px] bg-slate-800 text-slate-300">0</span>
         </button>
         <button data-action="nav" data-tab="guide" class="nav-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition">Study Guide</button>
-        <button data-action="nav" data-tab="backup" class="nav-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition">Backup &amp; Packs</button>
+        <button data-action="nav" data-tab="settings" class="nav-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition">Settings</button>
       </div>
     </nav>
   </header>
+  <div id="storage-warning" class="hidden bg-rose-500/15 border-b border-rose-500/35 text-rose-200 text-xs text-center px-4 py-2">Browser storage is blocked, so progress cannot be saved on this device. Export a backup from Settings.</div>
+  <div id="demo-banner" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-[80] bg-violet-700 text-white text-xs font-semibold px-4 py-2 rounded-full shadow-2xl flex items-center gap-3 max-w-[92vw]">
+    <span id="demo-banner-text"></span>
+    <button data-action="demo-exit" class="px-2.5 py-1 rounded-lg bg-white/20 hover:bg-white/30 shrink-0">Exit demo</button>
+  </div>
 
   <!-- Toast Banner -->
   <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm pointer-events-none"></div>
@@ -155,6 +154,14 @@
         <option value="4">4.0 Security Operations (28%)</option>
         <option value="5">5.0 Security Program Management &amp; Oversight (20%)</option>
       </select>
+      <select id="highlight-notebook-select" aria-label="Notebook" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+        <option value="Practice Quiz">Notebook: Practice Quiz</option>
+        <option value="Study Guide">Notebook: Study Guide</option>
+        <option value="Flashcards">Notebook: Flashcards</option>
+        <option value="PBQ Labs">Notebook: PBQ Labs</option>
+        <option value="Full Exams">Notebook: Full Exams</option>
+        <option value="General">Notebook: General</option>
+      </select>
       <input id="highlight-note-input" type="text" maxlength="180" placeholder="Optional 1-line takeaway..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500" />
     </div>
     <button data-action="confirm-save-highlight" class="w-full py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition">
@@ -172,17 +179,6 @@
         <button data-action="exam-go-unanswered" id="btn-exam-go-unanswered" class="px-3.5 py-2 rounded-xl bg-amber-600/90 hover:bg-amber-500 text-xs font-bold text-white">Go to First Unanswered</button>
         <button data-action="exam-submit-final" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white">Submit Now</button>
       </div>
-    </div>
-  </div>
-
-  <!-- Cloud sync modal -->
-  <div id="cloud-modal" class="hidden fixed inset-0 z-[65] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="glass-card rounded-2xl p-5 sm:p-6 w-full max-w-md space-y-3 border-indigo-500/40">
-      <div class="flex items-center justify-between">
-        <h3 class="text-sm font-bold text-white">Cloud sync</h3>
-        <button data-action="cloud-close" class="text-slate-400 hover:text-white text-sm px-2 py-0.5 rounded">✕</button>
-      </div>
-      <div id="cloud-modal-body" class="space-y-2"></div>
     </div>
   </div>
 
@@ -216,7 +212,7 @@
           </div>
         </div>
         <div class="flex items-center gap-2">
-          <button data-action="nav" data-tab="backup" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-500/30 transition">
+          <button data-action="nav" data-tab="settings" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-500/30 transition">
             Inspect Storage
           </button>
           <button data-action="dismiss-sync-banner" class="px-2.5 py-1.5 rounded-xl text-xs text-slate-400 hover:text-white">Dismiss</button>
@@ -334,10 +330,11 @@
             <label class="block text-xs font-semibold text-slate-300 mb-1.5">Question Count</label>
             <select id="quiz-count-select" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:border-indigo-500">
               <option value="5">5 Questions (Quick Sprint)</option>
+              <option value="8">8 Questions (Quick Session)</option>
               <option value="10" selected>10 Questions (Standard Drill)</option>
               <option value="15">15 Questions (Deep Focus)</option>
               <option value="25">25 Questions (Endurance Set)</option>
-              <option value="40">40 Questions (Mini Mock)</option>
+              <option value="45">45 Questions (Mini Mock)</option>
               <option value="60">60 Questions (Long Mock)</option>
             </select>
           </div>
@@ -354,7 +351,7 @@
             <label class="block text-xs font-semibold text-slate-300 mb-1.5">Pacing Timer</label>
             <select id="quiz-timer-select" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:border-indigo-500">
               <option value="off" selected>Untimed (Relaxed Study)</option>
-              <option value="on">90s / Question Exam Pace</option>
+              <option value="on">Timed: 90s per question as one countdown</option>
             </select>
           </div>
         </div>
@@ -373,6 +370,7 @@
           </div>
           <div class="flex items-center gap-3">
             <span id="quiz-timer-display" class="hidden font-mono text-xs px-2.5 py-1 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/30">01:30</span>
+            <button data-action="quiz-toggle-pause" id="btn-quiz-pause" class="hidden px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700">Pause</button>
             <button data-action="quit-quiz" class="text-xs text-slate-400 hover:text-rose-300 transition">End Quiz</button>
           </div>
         </div>
@@ -383,7 +381,9 @@
 
         <div id="quiz-explanation-box" class="hidden rounded-xl p-4 bg-slate-900/90 border border-slate-700 text-xs sm:text-sm text-slate-300 leading-relaxed"></div>
 
-        <div class="flex items-center justify-between pt-3 border-t border-slate-800">
+        <div id="quiz-pause-msg" class="hidden rounded-xl p-6 text-center bg-slate-900/90 border border-amber-500/30 text-sm text-amber-200">Paused. The timer is stopped and the question is hidden. Press Resume to continue.</div>
+
+        <div id="quiz-nav-row" class="flex items-center justify-between pt-3 border-t border-slate-800">
           <button data-action="quiz-prev" id="btn-quiz-prev" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs sm:text-sm font-semibold text-slate-200 disabled:opacity-40 transition">
             ← Previous
           </button>
@@ -418,7 +418,6 @@
           </div>
           <div class="flex items-center gap-2.5">
             <div id="exam-clock" class="font-mono text-sm font-bold px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-emerald-400">90:00</div>
-            <button data-action="exam-toggle-pause" id="btn-exam-pause" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700">Pause</button>
             <button data-action="exam-toggle-flag" id="btn-exam-flag" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-amber-300 border border-slate-700">⚑ Flag</button>
             <button data-action="exam-submit-confirm" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white">Submit Exam</button>
           </div>
@@ -590,77 +589,85 @@
       <div id="study-guide-content" class="space-y-3"></div>
     </section>
 
-    <!-- ==================== TAB 8: BACKUP & PACKS ==================== -->
-    <section id="tab-backup" class="tab-panel hidden space-y-6">
-      <!-- Deep Legacy Storage Inspector & Re-Sync Panel -->
-      <div class="glass-card rounded-2xl p-5 sm:p-6 border-indigo-500/40 space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 class="text-base sm:text-lg font-bold text-white">Deep Legacy Storage Inspector &amp; Re-Sync</h2>
-            <p class="text-xs text-slate-400 mt-0.5">Scans all browser <code class="font-mono text-indigo-300">localStorage</code> keys matching <code class="font-mono">secplus / sy0701 / prep</code> (V4, V3, V2, V1) and reconciles domain scores, PBQs, notes, and imported packs.</p>
-          </div>
-          <button data-action="force-legacy-resync" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs sm:text-sm font-bold text-white shadow-lg shadow-indigo-600/25 transition">
-            Force Re-Sync from V4 / V3 Storage
-          </button>
-        </div>
-
-        <div id="legacy-inspector-output" class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 font-mono text-xs text-slate-300 space-y-2 overflow-x-auto"></div>
+    <!-- ==================== TAB 8: SETTINGS ==================== -->
+    <section id="tab-settings" class="tab-panel hidden space-y-6">
+      <div class="glass-card rounded-2xl p-5">
+        <h2 class="text-lg font-bold text-white">Settings</h2>
+        <p class="text-xs text-slate-400 mt-0.5">Account, profile, bug reports and backup.</p>
       </div>
 
-      <!-- Multi-Schema JSON Question Pack Importer -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="glass-card rounded-2xl p-5 sm:p-6 space-y-4">
-          <div>
-            <h3 class="text-base font-bold text-white">Optional: JSON Question Pack Importer</h3>
-            <p class="text-xs text-slate-400 mt-0.5">Supports Vol 1 / Vol 2 <code class="font-mono">pack_name</code> JSON files, <code class="font-mono">{ questions: [...] }</code> objects, or raw question arrays. Automatically deduplicates and normalizes domain strings.</p>
-          </div>
+      <div id="settings-account" class="glass-card rounded-2xl p-5 sm:p-6 space-y-2"></div>
 
-          <div class="flex flex-wrap items-center gap-2">
-            <label class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-white border border-slate-700 cursor-pointer transition">
-              Upload .json Pack File
-              <input id="pack-file-input" type="file" accept=".json,application/json" class="hidden" />
-            </label>
-            <button data-action="import-pack-textarea" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white transition">
-              Import Pasted JSON Pack
-            </button>
-          </div>
+      <div id="settings-profile" class="hidden glass-card rounded-2xl p-5 sm:p-6 space-y-3"></div>
 
-          <textarea id="pack-json-textarea" rows="5" placeholder='Paste JSON pack here (e.g., { "pack_name": "...", "questions": [...] })...' class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 font-mono text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500"></textarea>
-
-          <div class="pt-3 border-t border-slate-800">
-            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Installed Expansion Packs</h4>
-            <div id="installed-packs-list" class="space-y-2 text-xs text-slate-400"></div>
-          </div>
+      <div class="glass-card rounded-2xl p-5 sm:p-6 space-y-3">
+        <h3 class="text-base font-bold text-white">Report a bug or send feedback</h3>
+        <p id="bug-signin-note" class="text-xs text-amber-300">Sign in (Account section above) to send a report.</p>
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
+          <select id="bug-category" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+            <option value="bug">Bug</option>
+            <option value="content">Wrong question or content</option>
+            <option value="idea">Idea or feedback</option>
+          </select>
         </div>
+        <textarea id="bug-message" rows="4" maxlength="2000" placeholder="What happened? What did you expect instead?" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500"></textarea>
+        <div class="flex flex-wrap items-center gap-3">
+          <button id="bug-submit-btn" data-action="bug-submit" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white disabled:opacity-50">Send report</button>
+          <span class="text-[11px] text-slate-500">Privacy: a report includes your message, your account email and name, the app version and your browser type. Only the app developer can read it. Your study data is never attached.</span>
+        </div>
+      </div>
 
-        <!-- Full Progress Backup Export & Restore -->
-        <div class="glass-card rounded-2xl p-5 sm:p-6 space-y-4">
-          <div>
-            <h3 class="text-base font-bold text-white">Full Progress Backup &amp; Cross-Device Restore</h3>
-            <p class="text-xs text-slate-400 mt-0.5">Export all V5 quiz stats, domain proficiency, solved PBQs, mastered flashcards, saved notes, and imported packs into a portable <code class="font-mono">.json</code> file.</p>
+      <div class="glass-card rounded-2xl p-5 sm:p-6 space-y-4">
+        <div>
+          <h3 class="text-base font-bold text-white">Backup</h3>
+          <p class="text-xs text-slate-400 mt-0.5">Export your quiz stats, flashcards, solved PBQs, notes and exam history as a portable <code class="font-mono text-indigo-300">.json</code> file, or restore one.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2.5">
+          <button data-action="export-full-backup" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white transition">Export Progress Backup (.json)</button>
+          <label class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-white border border-slate-700 cursor-pointer transition">
+            Restore Backup File (.json)
+            <input id="backup-file-input" type="file" accept=".json,application/json" class="hidden" />
+          </label>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <select id="backup-restore-mode" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+            <option value="merge" selected>Merge Mode (higher totals + union of notes and cards)</option>
+            <option value="overwrite">Overwrite Mode (replace this device's progress)</option>
+          </select>
+          <button data-action="restore-backup-textarea" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white">Apply Pasted Backup JSON</button>
+        </div>
+        <textarea id="backup-json-textarea" rows="4" placeholder="Or paste full backup JSON here to restore..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 font-mono text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500"></textarea>
+      </div>
+
+      <details class="glass-card rounded-2xl p-5 sm:p-6">
+        <summary class="cursor-pointer text-sm font-bold text-white list-none">Advanced: legacy storage inspector</summary>
+        <div class="mt-4 space-y-4">
+          <p class="text-xs text-slate-400">Scans this browser's <code class="font-mono text-indigo-300">localStorage</code> for progress saved by older versions (V3 and V4) and can merge it in.</p>
+          <button data-action="force-legacy-resync" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white transition">Force Re-Sync from V4 / V3 Storage</button>
+          <div id="legacy-inspector-output" class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 font-mono text-xs text-slate-300 space-y-2 overflow-x-auto"></div>
+        </div>
+      </details>
+
+      <div id="settings-dev" class="hidden glass-card rounded-2xl p-5 sm:p-6 space-y-4 border-violet-500/40">
+        <h3 class="text-base font-bold text-white">Developer</h3>
+        <div class="space-y-2">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Demo profile</h4>
+          <p class="text-xs text-slate-400">Loads a sandbox with sample progress so you can see the app in different states. Nothing is saved or synced, and your real data comes back when you exit or reload.</p>
+          <div class="flex flex-wrap gap-2">
+            <button data-action="demo-enter" data-level="new" class="px-3 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-xs font-bold text-white">Brand new</button>
+            <button data-action="demo-enter" data-level="some" class="px-3 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-xs font-bold text-white">Some progress</button>
+            <button data-action="demo-enter" data-level="lot" class="px-3 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-xs font-bold text-white">A lot of progress</button>
+            <button data-action="demo-enter" data-level="finished" class="px-3 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-xs font-bold text-white">Finished</button>
+            <button data-action="demo-exit" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700">Exit demo</button>
           </div>
-
-          <div class="flex flex-wrap items-center gap-2.5">
-            <button data-action="export-full-backup" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white transition">
-              Export Progress Backup (.json)
-            </button>
-            <label class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-white border border-slate-700 cursor-pointer transition">
-              Restore Backup File (.json)
-              <input id="backup-file-input" type="file" accept=".json,application/json" class="hidden" />
-            </label>
+          <p id="demo-status-text" class="text-[11px] text-slate-500"></p>
+        </div>
+        <div class="space-y-2 pt-3 border-t border-slate-800">
+          <div class="flex items-center justify-between gap-2">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Bug reports</h4>
+            <button data-action="dev-load-reports" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700">Load reports</button>
           </div>
-
-          <div class="grid grid-cols-2 gap-2">
-            <select id="backup-restore-mode" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-              <option value="merge" selected>Merge Mode (Higher Domain Totals + Union of Notes/Cards/Packs)</option>
-              <option value="overwrite">Overwrite Mode (Replace V5 State)</option>
-            </select>
-            <button data-action="restore-backup-textarea" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white">
-              Apply Pasted Backup JSON
-            </button>
-          </div>
-
-          <textarea id="backup-json-textarea" rows="5" placeholder="Or paste full backup JSON here to restore..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 font-mono text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500"></textarea>
+          <div id="dev-reports" class="space-y-2"></div>
         </div>
       </div>
     </section>
@@ -1137,7 +1144,8 @@
         missedQuestionIds: [],
         notes: [],
         examHistory: [],
-        importedPacks: [], // [{ pack_name, version, questions: [...] }]
+        importedPacks: [], // legacy field, kept empty (the importer was removed in V8)
+        profileName: '',
         legacySyncDone: false,
         legacySyncReport: null,
         guideReviewed: []
@@ -1515,6 +1523,7 @@
 
     let storageOk = true;
     function saveAppState(stateObj) {
+      if (demoMode) return; // the demo sandbox never touches real storage or the cloud
       storageOk = safeStorage.setItem(STORAGE_KEY_V5, JSON.stringify(stateObj));
       if (typeof updateStatusPill === 'function') updateStatusPill();
       if (typeof cloudOnLocalSave === 'function') cloudOnLocalSave();
@@ -1636,6 +1645,8 @@
        ========================================================================= */
     const boot = loadAppState();
     let appState = boot.state;
+    const hadLegacyPacks = Array.isArray(appState.importedPacks) && appState.importedPacks.length > 0;
+    appState.importedPacks = [];
     let lastDiagnostics = boot.syncInfo.diagnostics;
 
     // One-time cleanup: drop ghost / unresolvable IDs (old generated questions, stale legacy IDs) from the missed queue
@@ -1830,7 +1841,10 @@
         index: 0,
         mode,
         timed,
-        secondsLeft: 90
+        totalSeconds: timed ? 90 * selected.length : 0,
+        endAt: 0,
+        remaining: 0,
+        paused: false
       };
 
       document.getElementById('quiz-setup-panel').classList.add('hidden');
@@ -1841,38 +1855,10 @@
       startQuizTimerIfNeeded();
     }
 
-    function startQuizTimerIfNeeded() {
-      if (quizTimerInterval) clearInterval(quizTimerInterval);
-      const timerEl = document.getElementById('quiz-timer-display');
-      if (!quizSession || !quizSession.timed) {
-        timerEl.classList.add('hidden');
-        return;
-      }
-      timerEl.classList.remove('hidden');
-      quizSession.secondsLeft = 90;
-      timerEl.textContent = '01:30';
-      quizTimerInterval = setInterval(() => {
-        if (!quizSession) return;
-        quizSession.secondsLeft -= 1;
-        const m = String(Math.floor(Math.max(0, quizSession.secondsLeft) / 60)).padStart(2, '0');
-        const s = String(Math.max(0, quizSession.secondsLeft) % 60).padStart(2, '0');
-        timerEl.textContent = `${m}:${s}`;
-        if (quizSession.secondsLeft <= 0) {
-          clearInterval(quizTimerInterval);
-          if (quizSession.index < quizSession.questions.length - 1) {
-            quizSession.index += 1;
-            renderQuizQuestion();
-            startQuizTimerIfNeeded();
-          } else {
-            finishPracticeQuiz();
-          }
-        }
-      }, 1000);
-    }
-
     function selectQuizOption(optIdx) {
       if (!quizSession) return;
       const q = quizSession.questions[quizSession.index];
+      if (quizSession.paused) return;
       if (optIdx < 0 || optIdx >= q.opts.length) return;
       // Instant-feedback mode locks the first answer once the rationale is revealed
       if (quizSession.mode === 'instant' && q.userChoice !== null) return;
@@ -2075,17 +2061,19 @@
 
     function startExamClock() {
       if (examTimerInterval) clearInterval(examTimerInterval);
-      examTimerInterval = setInterval(() => {
-        if (!examSession || examSession.paused) return;
-        examSession.secondsRemaining -= 1;
-        const mins = String(Math.floor(Math.max(0, examSession.secondsRemaining) / 60)).padStart(2, '0');
-        const secs = String(Math.max(0, examSession.secondsRemaining) % 60).padStart(2, '0');
-        document.getElementById('exam-clock').textContent = `${mins}:${secs}`;
-        if (examSession.secondsRemaining <= 0) {
+      examSession.endAt = Date.now() + examSession.secondsRemaining * 1000;
+      const tick = () => {
+        if (!examSession) return;
+        const rem = Math.max(0, Math.ceil((examSession.endAt - Date.now()) / 1000));
+        examSession.secondsRemaining = rem;
+        document.getElementById('exam-clock').textContent = clockText(rem);
+        if (rem <= 0) {
           clearInterval(examTimerInterval);
           submitFullExam();
         }
-      }, 1000);
+      };
+      tick();
+      examTimerInterval = setInterval(tick, 500);
     }
 
     function isExamItemAnswered(item) {
@@ -2713,44 +2701,6 @@
       return 1;
     }
 
-    function renderNotesTab() {
-      const query = (document.getElementById('notes-search-input')?.value || '').trim().toLowerCase();
-      const container = document.getElementById('notes-domain-groups');
-
-      container.innerHTML = [1, 2, 3, 4, 5].map((d) => {
-        const meta = DOMAIN_META[d];
-        const domainNotes = appState.notes.filter((n) => {
-          if (Number(n.domain) !== d) return false;
-          if (!query) return true;
-          return String(n.text || '').toLowerCase().includes(query) || (n.takeaway || '').toLowerCase().includes(query);
-        });
-
-        return `
-          <details open class="glass-card rounded-2xl p-4 sm:p-5">
-            <summary class="cursor-pointer flex items-center justify-between text-sm font-bold text-white list-none">
-              <span>${meta.code} ${escapeHTML(meta.name)}</span>
-              <span class="px-2.5 py-0.5 rounded-full text-xs bg-indigo-500/20 text-indigo-300">${domainNotes.length} Notes</span>
-            </summary>
-            <div class="mt-3 space-y-2.5">
-              ${domainNotes.length === 0
-                ? '<p class="text-xs text-slate-500">No saved notes in this domain yet. Highlight any text during a quiz, flashcard or study guide section to capture one.</p>'
-                : domainNotes.map((n) => `
-                  <div data-action="open-note-context" data-note-id="${escapeHTML(n.id)}" class="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-indigo-500/60 cursor-pointer transition flex items-start justify-between gap-3">
-                    <div class="space-y-1 min-w-0">
-                      <p class="text-xs sm:text-sm text-slate-200 leading-relaxed">"${escapeHTML(n.text)}"</p>
-                      ${n.takeaway ? `<p class="text-xs text-emerald-300 font-medium">Takeaway: ${escapeHTML(n.takeaway)}</p>` : ''}
-                      <div class="text-[11px] text-slate-500">${escapeHTML(noteSourceLabel(n))} &bull; ${new Date(n.createdAt).toLocaleDateString()}</div>
-                      <div class="text-[11px] font-semibold text-indigo-300">View source &#8599;</div>
-                    </div>
-                    <button data-action="delete-note" data-note-id="${escapeHTML(n.id)}" class="text-xs text-slate-500 hover:text-rose-400 px-2 py-1 rounded shrink-0">Delete</button>
-                  </div>
-                `).join('')}
-            </div>
-          </details>
-        `;
-      }).join('');
-    }
-
     /* ---------- Study guide data helpers ---------- */
     function guideBold(text) {
       return escapeHTML(text).replace(/\*\*(.+?)\*\*/g, '<strong class="text-white">$1</strong>');
@@ -3198,7 +3148,7 @@
     /* =========================================================================
        16. BACKUP, LEGACY INSPECTOR & MULTI-SCHEMA PACK MANAGER
        ========================================================================= */
-    function renderBackupAndPacksTab() {
+    function renderLegacyInspector() {
       // Legacy Storage Inspector Output
       const inspectorEl = document.getElementById('legacy-inspector-output');
       const keys = discoverAllLegacyKeys();
@@ -3217,76 +3167,13 @@
               <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-800 space-y-1">
                 <div class="text-indigo-300 font-bold">${escapeHTML(d.key)}</div>
                 <div>Parsed Overall: <span class="text-white">${d.overall.correct}/${d.overall.total}</span> &bull; Domains: <span class="text-emerald-300">${domStr}</span></div>
-                <div>PBQs Solved: ${d.pbqs} &bull; Saved Notes: ${d.notes} &bull; Mastered Cards: ${d.flashcards} &bull; Packs: ${d.packs}</div>
+                <div>PBQs Solved: ${d.pbqs} &bull; Saved Notes: ${d.notes} &bull; Mastered Cards: ${d.flashcards}</div>
               </div>
             `;
           }).join('')}
         `;
       }
 
-      // Installed Packs List
-      const packsListEl = document.getElementById('installed-packs-list');
-      if (appState.importedPacks.length === 0) {
-        packsListEl.innerHTML = `<p>No external packs imported. The ${BUILTIN_QUESTIONS.length}-question built-in bank is complete; importing is optional.</p>`;
-      } else {
-        packsListEl.innerHTML = appState.importedPacks.map((p, idx) => `
-          <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-900 border border-slate-800">
-            <div>
-              <div class="font-semibold text-slate-200">${escapeHTML(p.pack_name || `Expansion Pack #${idx + 1}`)}</div>
-              <div class="text-[11px] text-slate-400">${p.questions.length} questions loaded</div>
-            </div>
-            <button data-action="remove-pack" data-pack-idx="${idx}" class="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-xs font-semibold">Remove</button>
-          </div>
-        `).join('');
-      }
-    }
-
-    function processImportedPackJSON(rawText) {
-      let parsed = null;
-      try {
-        parsed = JSON.parse(rawText);
-      } catch (e) {
-        showToast('Invalid JSON syntax in question pack.', 'error');
-        return;
-      }
-
-      let rawQuestions = [];
-      let packName = 'Custom SY0-701 Expansion Pack';
-      let version = '1.0';
-
-      if (Array.isArray(parsed)) {
-        rawQuestions = parsed;
-      } else if (parsed && typeof parsed === 'object') {
-        packName = parsed.pack_name || parsed.name || parsed.title || packName;
-        version = parsed.version || '1.0';
-        if (Array.isArray(parsed.questions)) rawQuestions = parsed.questions;
-        else if (Array.isArray(parsed.items)) rawQuestions = parsed.items;
-      }
-
-      const normalized = normalizeIncomingQuestions(rawQuestions, 'imp');
-      const rejectedCount = normalized.rejected || 0;
-      if (normalized.length === 0) {
-        showToast(`No valid questions found in JSON pack${rejectedCount ? ` (${rejectedCount} rejected: missing/unresolvable answer key or bad options)` : ''}.`, 'error');
-        return;
-      }
-
-      const existingIds = new Set(getCombinedQuestionBank().all.map((q) => q.id));
-      const deduped = normalized.filter((q) => !existingIds.has(q.id));
-
-      if (deduped.length === 0) {
-        showToast('All questions in this pack are already imported.', 'warn');
-        return;
-      }
-
-      appState.importedPacks.push({
-        pack_name: packName,
-        version,
-        questions: deduped
-      });
-      saveAppState(appState);
-      renderDashboard();
-      renderBackupAndPacksTab();
-      showToast(`Imported ${deduped.length} new questions from "${packName}"${rejectedCount ? ` (${rejectedCount} rejected: unresolvable answer key)` : ''}.`, rejectedCount ? 'warn' : 'success');
     }
 
     function applyBackupRestore(rawText, mode) {
@@ -3318,9 +3205,7 @@
       for (const n of extracted.notes) {
         if (!appState.notes.some((ex) => ex.text === n.text)) appState.notes.push(n);
       }
-      for (const pk of extracted.importedPacks) {
-        if (!appState.importedPacks.some((ex) => ex.pack_name === pk.pack_name)) appState.importedPacks.push(pk);
-      }
+      appState.importedPacks = [];
       for (const eh of extracted.examHistory) {
         if (!appState.examHistory.some((ex) => ex.title === eh.title && ex.date === eh.date && ex.scaled === eh.scaled)) appState.examHistory.push(eh);
       }
@@ -3328,7 +3213,7 @@
       saveAppState(appState);
       renderDashboard();
       renderNotesTab();
-      renderBackupAndPacksTab();
+      renderSettingsTab();
       showToast(`Backup restored (${mode.toUpperCase()} mode)!`, 'success');
     }
 
@@ -3519,7 +3404,7 @@
       if (tabName === 'flashcards') renderFlashcards();
       if (tabName === 'notes') renderNotesTab();
       if (tabName === 'guide') renderStudyGuide();
-      if (tabName === 'backup') renderBackupAndPacksTab();
+      if (tabName === 'settings') renderSettingsTab();
     }
 
     document.addEventListener('click', (e) => {
@@ -3603,12 +3488,6 @@
         if (examSession) {
           examSession.items[examSession.index].flagged = !examSession.items[examSession.index].flagged;
           renderExamItem();
-        }
-      } else if (action === 'exam-toggle-pause') {
-        if (examSession) {
-          examSession.paused = !examSession.paused;
-          btn.textContent = examSession.paused ? 'Resume' : 'Pause';
-          showToast(examSession.paused ? 'Exam timer paused.' : 'Exam timer resumed.', 'info');
         }
       } else if (action === 'exam-submit-confirm') {
         if (!examSession) return;
@@ -3749,6 +3628,7 @@
           text: txt,
           takeaway: '',
           source: 'Manual Note',
+          notebook: 'General',
           createdAt: new Date().toISOString()
         });
         document.getElementById('manual-note-text').value = '';
@@ -3771,7 +3651,7 @@
           if (dNotes.length === 0) lines.push('- _No notes recorded._\n');
           else {
             for (const n of dNotes) {
-              lines.push(`- **Highlight:** ${n.text}${n.takeaway ? ` — *Takeaway:* ${n.takeaway}` : ''} _(${noteSourceLabel(n)})_`);
+              lines.push(`- **Highlight:** ${n.text}${n.takeaway ? ` — *Takeaway:* ${n.takeaway}` : ''} _(${noteNotebookOf(n)} · ${noteSourceLabel(n)})_`);
             }
             lines.push('');
           }
@@ -3783,6 +3663,7 @@
         a.click();
       } else if (action === 'close-highlight-popover') {
         document.getElementById('highlight-popover').classList.add('hidden');
+        window.getSelection().removeAllRanges();
         pendingHighlight = null;
         pendingHighlightCtx = null;
       } else if (action === 'confirm-save-highlight') {
@@ -3795,6 +3676,7 @@
           text: pendingHighlight,
           takeaway,
           source: `Highlight (${activeTab})`,
+          notebook: document.getElementById('highlight-notebook-select').value || 'General',
           ctx: pendingHighlightCtx || null,
           createdAt: new Date().toISOString()
         });
@@ -3803,6 +3685,7 @@
         if (activeTab === 'notes') renderNotesTab();
         document.getElementById('highlight-popover').classList.add('hidden');
         document.getElementById('highlight-note-input').value = '';
+        window.getSelection().removeAllRanges();
         pendingHighlight = null;
         pendingHighlightCtx = null;
         showToast(`Saved highlight to Domain ${dom}.0 Notes!`, 'success');
@@ -3812,18 +3695,8 @@
         lastDiagnostics = sync.diagnostics;
         saveAppState(appState);
         renderDashboard();
-        renderBackupAndPacksTab();
+        renderSettingsTab();
         showToast(sync.mergedAny ? 'Re-synced legacy V4/V3 progress into V5!' : 'No higher legacy V4/V3 totals found.', sync.mergedAny ? 'success' : 'info');
-      } else if (action === 'import-pack-textarea') {
-        const txt = document.getElementById('pack-json-textarea').value.trim();
-        if (txt) processImportedPackJSON(txt);
-      } else if (action === 'remove-pack') {
-        const idx = Number(btn.dataset.packIdx);
-        appState.importedPacks.splice(idx, 1);
-        saveAppState(appState);
-        renderDashboard();
-        renderBackupAndPacksTab();
-        showToast('Removed expansion pack.', 'info');
       } else if (action === 'export-full-backup') {
         const blob = new Blob([JSON.stringify(appState, null, 2)], { type: 'application/json' });
         const a = document.createElement('a');
@@ -3856,6 +3729,16 @@
           c.state.touched = true;
           pbqRerender(target.dataset.ctx);
         }
+      } else if (target.dataset?.action === 'note-set-domain' || target.dataset?.action === 'note-set-notebook') {
+        const n = appState.notes.find((x) => x.id === target.dataset.noteId);
+        if (n) {
+          if (target.dataset.action === 'note-set-domain') n.domain = Number(target.value) || n.domain;
+          else n.notebook = NOTEBOOKS.includes(target.value) ? target.value : 'General';
+          if (!n.notebook) n.notebook = noteNotebookOf(n);
+          saveAppState(appState);
+          renderNotesTab();
+          renderDashboard();
+        }
       } else if (target.id === 'guide-domain-filter') {
         guideUI.domain = target.value;
         renderStudyGuide();
@@ -3867,11 +3750,6 @@
         fcIndex = 0;
         fcFlipped = false;
         renderFlashcards();
-      } else if (target.id === 'pack-file-input' && target.files?.[0]) {
-        const reader = new FileReader();
-        reader.onload = () => processImportedPackJSON(String(reader.result || ''));
-        reader.readAsText(target.files[0]);
-        target.value = '';
       } else if (target.id === 'backup-file-input' && target.files?.[0]) {
         const reader = new FileReader();
         const mode = document.getElementById('backup-restore-mode').value;
@@ -3889,13 +3767,14 @@
     document.addEventListener('mouseup', (e) => {
       if (e.target.closest('#highlight-popover') || e.target.closest('input, textarea, select')) return;
       const sel = window.getSelection();
-      const text = sel ? sel.toString().trim() : '';
+      const text = sel && !sel.isCollapsed ? sel.toString().trim() : '';
       const popover = document.getElementById('highlight-popover');
       if (text.length >= 8 && text.length <= 600) {
         pendingHighlight = text;
         pendingHighlightCtx = captureHighlightContext(sel.anchorNode);
         document.getElementById('highlight-preview-text').textContent = text;
         document.getElementById('highlight-domain-select').value = String(domainFromContext(pendingHighlightCtx) || detectContextDomain());
+        document.getElementById('highlight-notebook-select').value = notebookForHighlight(pendingHighlightCtx);
         popover.classList.remove('hidden');
         const left = Math.min(window.innerWidth - 335, Math.max(12, e.clientX - 140));
         const top = Math.min(window.innerHeight - 230, Math.max(12, e.clientY + 14));
@@ -3908,6 +3787,7 @@
     document.addEventListener('keydown', (e) => {
       if (e.target.closest('input, textarea, select')) return;
       if (activeTab === 'quiz' && quizSession) {
+        if (quizSession.paused) return;
         if (/^[1-8]$/.test(e.key)) {
           selectQuizOption(Number(e.key) - 1);
         } else if (e.key === 'Enter') {
@@ -3932,12 +3812,446 @@
     });
 
     /* =========================================================================
+       17a. V8: TIMERS, NOTEBOOKS, SETTINGS, BUG REPORTS, ADMIN + DEMO MODE
+       ========================================================================= */
+    var demoMode = false;   // var on purpose: saveAppState checks it during boot
+    var demoStash = null;
+    var demoLevel = null;
+    var demoQueue = [];
+    const APP_VERSION = 'V8';
+
+    function pad2(n) { return String(n).padStart(2, '0'); }
+    function clockText(sec) {
+      const s = Math.max(0, Math.floor(sec));
+      return `${pad2(Math.floor(s / 60))}:${pad2(s % 60)}`;
+    }
+
+    /* ---------- Practice-quiz countdown: ONE clock for the whole session ---------- */
+    function startQuizTimerIfNeeded() {
+      const timerEl = document.getElementById('quiz-timer-display');
+      const pauseBtn = document.getElementById('btn-quiz-pause');
+      if (!quizSession || !quizSession.timed) {
+        if (quizTimerInterval) clearInterval(quizTimerInterval);
+        timerEl.classList.add('hidden');
+        pauseBtn.classList.add('hidden');
+        return;
+      }
+      if (quizSession.endAt) return; // already running: never restart between questions
+      if (quizTimerInterval) clearInterval(quizTimerInterval);
+      document.getElementById('quiz-runner-panel').classList.remove('quiz-paused');
+      document.getElementById('quiz-pause-msg').classList.add('hidden');
+      timerEl.classList.remove('hidden');
+      pauseBtn.classList.remove('hidden');
+      pauseBtn.textContent = 'Pause';
+      quizSession.endAt = Date.now() + quizSession.totalSeconds * 1000;
+      quizSession.paused = false;
+      quizTick();
+      quizTimerInterval = setInterval(quizTick, 500);
+    }
+
+    function quizTick() {
+      if (!quizSession || !quizSession.timed || quizSession.paused) return;
+      const rem = Math.max(0, Math.ceil((quizSession.endAt - Date.now()) / 1000));
+      const el = document.getElementById('quiz-timer-display');
+      el.textContent = clockText(rem);
+      el.classList.toggle('text-rose-300', rem <= 60);
+      el.classList.toggle('text-amber-300', rem > 60);
+      if (rem <= 0) {
+        clearInterval(quizTimerInterval);
+        showToast("Time's up. The quiz has ended.", 'warn');
+        finishPracticeQuiz();
+      }
+    }
+
+    function toggleQuizPause() {
+      if (!quizSession || !quizSession.timed) return;
+      const panel = document.getElementById('quiz-runner-panel');
+      const btn = document.getElementById('btn-quiz-pause');
+      if (!quizSession.paused) {
+        quizSession.remaining = Math.max(0, Math.ceil((quizSession.endAt - Date.now()) / 1000));
+        quizSession.paused = true;
+        panel.classList.add('quiz-paused');
+        document.getElementById('quiz-pause-msg').classList.remove('hidden');
+        btn.textContent = 'Resume';
+      } else {
+        quizSession.endAt = Date.now() + quizSession.remaining * 1000;
+        quizSession.paused = false;
+        panel.classList.remove('quiz-paused');
+        document.getElementById('quiz-pause-msg').classList.add('hidden');
+        btn.textContent = 'Pause';
+        quizTick();
+      }
+    }
+
+    /* ---------- Notebooks ---------- */
+    const NOTEBOOKS = ['Practice Quiz', 'Study Guide', 'Flashcards', 'PBQ Labs', 'Full Exams', 'General'];
+
+    function noteNotebookOf(n) {
+      if (n && n.notebook && NOTEBOOKS.includes(n.notebook)) return n.notebook;
+      const src = String((n && n.source) || '');
+      if (/\(exams\)/i.test(src)) return 'Full Exams';
+      const t = n && n.ctx && n.ctx.type;
+      if (t === 'question') return 'Practice Quiz';
+      if (t === 'guide') return 'Study Guide';
+      if (t === 'flashcard') return 'Flashcards';
+      if (t === 'pbq') return 'PBQ Labs';
+      if (/practice question|highlight \(quiz\)|practice quiz/i.test(src)) return 'Practice Quiz';
+      if (/\(guide\)|study guide/i.test(src)) return 'Study Guide';
+      if (/\(flashcards\)|flashcard/i.test(src)) return 'Flashcards';
+      if (/\(pbq\)|pbq/i.test(src)) return 'PBQ Labs';
+      return 'General';
+    }
+
+    function notebookForHighlight(ctx) {
+      if (activeTab === 'exams') return 'Full Exams';
+      if (activeTab === 'quiz') return 'Practice Quiz';
+      if (activeTab === 'flashcards') return 'Flashcards';
+      if (activeTab === 'pbq') return 'PBQ Labs';
+      if (activeTab === 'guide') return 'Study Guide';
+      return noteNotebookOf({ ctx });
+    }
+
+    function migrateNotes() {
+      let changed = false;
+      for (const n of appState.notes || []) {
+        if (!n.notebook || !NOTEBOOKS.includes(n.notebook)) { n.notebook = noteNotebookOf(n); changed = true; }
+      }
+      if (changed || hadLegacyPacks) saveAppState(appState);
+    }
+    migrateNotes();
+
+    function noteCardHTML(n) {
+      const nb = noteNotebookOf(n);
+      return `
+        <div data-action="open-note-context" data-note-id="${escapeHTML(n.id)}" class="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-indigo-500/60 cursor-pointer transition flex items-start justify-between gap-3">
+          <div class="space-y-1.5 min-w-0">
+            <p class="text-xs sm:text-sm text-slate-200 leading-relaxed">"${escapeHTML(n.text)}"</p>
+            ${n.takeaway ? `<p class="text-xs text-emerald-300 font-medium">Takeaway: ${escapeHTML(n.takeaway)}</p>` : ''}
+            <div class="text-[11px] text-slate-500">${escapeHTML(noteSourceLabel(n))} &bull; ${new Date(n.createdAt).toLocaleDateString()}</div>
+            <div data-action="noop" class="flex flex-wrap items-center gap-2 pt-0.5">
+              <select data-action="note-set-domain" data-note-id="${escapeHTML(n.id)}" aria-label="Domain" class="bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-[11px] text-slate-300">
+                ${[1, 2, 3, 4, 5].map((d) => `<option value="${d}" ${Number(n.domain) === d ? 'selected' : ''}>${DOMAIN_META[d].code} ${escapeHTML(DOMAIN_META[d].name)}</option>`).join('')}
+              </select>
+              <select data-action="note-set-notebook" data-note-id="${escapeHTML(n.id)}" aria-label="Notebook" class="bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-[11px] text-slate-300">
+                ${NOTEBOOKS.map((b) => `<option value="${b}" ${nb === b ? 'selected' : ''}>${b}</option>`).join('')}
+              </select>
+              <span class="text-[11px] font-semibold text-indigo-300">View source &#8599;</span>
+            </div>
+          </div>
+          <button data-action="delete-note" data-note-id="${escapeHTML(n.id)}" class="text-xs text-slate-500 hover:text-rose-400 px-2 py-1 rounded shrink-0">Delete</button>
+        </div>`;
+    }
+
+    function renderNotesTab() {
+      const query = (document.getElementById('notes-search-input')?.value || '').trim().toLowerCase();
+      const container = document.getElementById('notes-domain-groups');
+      container.innerHTML = [1, 2, 3, 4, 5].map((d) => {
+        const meta = DOMAIN_META[d];
+        const domainNotes = appState.notes.filter((n) => {
+          if (Number(n.domain) !== d) return false;
+          if (!query) return true;
+          return String(n.text || '').toLowerCase().includes(query) || (n.takeaway || '').toLowerCase().includes(query);
+        });
+        const groups = NOTEBOOKS
+          .map((nb) => ({ nb, items: domainNotes.filter((n) => noteNotebookOf(n) === nb) }))
+          .filter((g) => g.items.length > 0);
+        return `
+          <details open class="glass-card rounded-2xl p-4 sm:p-5" data-domain-group="${d}">
+            <summary class="cursor-pointer flex items-center justify-between text-sm font-bold text-white list-none">
+              <span>${meta.code} ${escapeHTML(meta.name)}</span>
+              <span class="px-2.5 py-0.5 rounded-full text-xs bg-indigo-500/20 text-indigo-300">${domainNotes.length} Notes</span>
+            </summary>
+            <div class="mt-3 space-y-3">
+              ${groups.length === 0
+                ? '<p class="text-xs text-slate-500">No saved notes in this domain yet. Highlight any text during a quiz, flashcard, PBQ, exam or study guide section to capture one.</p>'
+                : groups.map((g) => `
+                  <details open class="rounded-xl border border-slate-800 bg-slate-950/40 p-3" data-notebook="${escapeHTML(g.nb)}">
+                    <summary class="cursor-pointer flex items-center justify-between text-xs font-bold text-indigo-200 list-none">
+                      <span>&#128211; ${escapeHTML(g.nb)}</span>
+                      <span class="px-2 py-0.5 rounded-full text-[11px] bg-slate-800 text-slate-300">${g.items.length}</span>
+                    </summary>
+                    <div class="mt-2.5 space-y-2.5">${g.items.map(noteCardHTML).join('')}</div>
+                  </details>`).join('')}
+            </div>
+          </details>`;
+      }).join('');
+    }
+
+    /* ---------- Settings: account, profile, bug reports, developer tools ---------- */
+    const CLOUD_LABELS = {
+      'signed-out': ['Sign in to sync', 'bg-slate-800/90 text-slate-200 border-slate-700'],
+      connecting: ['Connecting…', 'bg-amber-500/15 text-amber-300 border-amber-500/30'],
+      syncing: ['Syncing…', 'bg-amber-500/15 text-amber-300 border-amber-500/30'],
+      synced: ['Synced', 'bg-emerald-500/15 text-emerald-300 border-emerald-500/35'],
+      offline: ['Offline · will sync', 'bg-amber-500/15 text-amber-300 border-amber-500/30'],
+      error: ['Sync error', 'bg-rose-500/15 text-rose-300 border-rose-500/35'],
+      unavailable: ['Sync unavailable', 'bg-slate-800/90 text-slate-400 border-slate-700']
+    };
+
+    function renderSettingsAccount() {
+      const cs = typeof cloudState !== 'undefined' ? cloudState : null;
+      const acc = document.getElementById('settings-account');
+      if (!cs || !acc) return;
+      const s = cs.status;
+      const [text] = CLOUD_LABELS[s] || CLOUD_LABELS['signed-out'];
+      const u = cs.user;
+      const last = cs.lastSync ? new Date(cs.lastSync).toLocaleTimeString() : '—';
+      acc.innerHTML = u ? `
+        <h3 class="text-base font-bold text-white">Account &amp; sync</h3>
+        <p class="text-xs text-slate-300">Signed in as <strong class="text-white">${escapeHTML(u.email || u.name || 'your account')}</strong></p>
+        <p class="text-xs text-slate-400">Status: <strong class="text-slate-200">${escapeHTML(text)}</strong> &bull; last sync ${escapeHTML(last)}</p>
+        ${cs.detail ? `<p class="text-xs text-rose-300">${escapeHTML(cs.detail)}</p>` : ''}
+        <p class="text-[11px] text-slate-500">Syncs quiz history, flashcards, PBQ progress, notes, exam history, study guide progress and your profile name.</p>
+        <div class="flex flex-wrap gap-2 pt-1">
+          <button data-action="cloud-syncnow" class="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white">Sync now</button>
+          <button data-action="cloud-signout" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700">Sign out</button>
+        </div>` : `
+        <h3 class="text-base font-bold text-white">Account &amp; sync</h3>
+        <p class="text-xs text-slate-300">Sign in to keep your progress in sync between your phone and laptop. The app keeps working without an account; your progress then stays on this device only.</p>
+        ${s === 'unavailable' ? '<p class="text-xs text-amber-300">Sync could not load (you may be offline). Try again when connected.</p>' : ''}
+        ${cs.detail ? `<p class="text-xs text-rose-300">${escapeHTML(cs.detail)}</p>` : ''}
+        <button data-action="cloud-signin" class="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-xs font-bold text-slate-900">Sign in with Google</button>`;
+
+      const prof = document.getElementById('settings-profile');
+      if (prof) {
+        if (u) {
+          const key = `${u.uid}|${appState.profileName || ''}|${demoMode ? 'd' : ''}`;
+          if (prof.dataset.key !== key) {
+            prof.dataset.key = key;
+            prof.innerHTML = `
+              <h3 class="text-base font-bold text-white">Profile</h3>
+              <p class="text-xs text-slate-400">The name shown next to your sync status. It starts as your Google first name and follows you across devices.</p>
+              <div class="flex flex-wrap items-center gap-2">
+                <input id="profile-name-input" type="text" maxlength="40" value="${escapeHTML(appState.profileName || '')}" placeholder="Your name" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500" />
+                <button data-action="profile-save" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white">Save name</button>
+              </div>`;
+          }
+          prof.classList.remove('hidden');
+        } else {
+          prof.dataset.key = '';
+          prof.classList.add('hidden');
+        }
+      }
+
+      const bugNote = document.getElementById('bug-signin-note');
+      if (bugNote) bugNote.classList.toggle('hidden', !!u);
+
+      const dev = document.getElementById('settings-dev');
+      if (dev) {
+        dev.classList.toggle('hidden', !cs.isAdmin);
+        const st = document.getElementById('demo-status-text');
+        if (st) st.textContent = demoMode ? `Demo active: ${demoLevel}` : 'Demo is off. Your real data is showing.';
+      }
+    }
+
+    function renderSettingsTab() {
+      renderSettingsAccount();
+      renderLegacyInspector();
+    }
+
+    /* ---------- Bug reports (saved to Firestore) ---------- */
+    var lastBugAt = 0;
+    async function submitBugReport() {
+      const FB = cloudFB();
+      const u = cloudState && cloudState.user;
+      if (demoMode) { showToast('Demo mode: reports are disabled.', 'info'); return; }
+      if (!u || !FB || !FB.addReport) { showToast('Sign in first to send a report.', 'warn'); return; }
+      const msgEl = document.getElementById('bug-message');
+      const message = msgEl.value.trim();
+      if (message.length < 10) { showToast('Please describe the problem in at least a sentence.', 'warn'); return; }
+      if (message.length > 2000) { showToast('Please keep the report under 2000 characters.', 'warn'); return; }
+      if (Date.now() - lastBugAt < 30000) { showToast('Please wait a few seconds before sending another report.', 'warn'); return; }
+      const btn = document.getElementById('bug-submit-btn');
+      btn.disabled = true;
+      try {
+        await FB.addReport({
+          uid: u.uid,
+          email: u.email || '',
+          name: appState.profileName || u.name || '',
+          message,
+          category: document.getElementById('bug-category').value,
+          version: APP_VERSION,
+          ua: String(navigator.userAgent).slice(0, 200),
+          tab: activeTab,
+          status: 'new',
+          createdAt: Date.now()
+        });
+        lastBugAt = Date.now();
+        msgEl.value = '';
+        showToast('Report sent. Thank you!', 'success');
+      } catch (err) {
+        showToast('Could not send the report. Check your connection and try again.', 'error');
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function devLoadReports() {
+      const FB = cloudFB();
+      const box = document.getElementById('dev-reports');
+      if (!FB || !FB.listReports) return;
+      box.innerHTML = '<p class="text-xs text-slate-400">Loading…</p>';
+      try {
+        const list = await FB.listReports();
+        if (!list.length) { box.innerHTML = '<p class="text-xs text-slate-400">No reports yet.</p>'; return; }
+        box.innerHTML = list.map((r) => `
+          <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1" data-report-id="${escapeHTML(r.id)}">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <span class="text-[11px] text-slate-400">${escapeHTML(r.category || 'bug')} &bull; ${escapeHTML(r.name || r.email || 'unknown')} &bull; ${r.createdAt ? new Date(r.createdAt).toLocaleString() : ''} &bull; ${escapeHTML(r.version || '')}</span>
+              <span class="px-2 py-0.5 rounded-full text-[11px] ${r.status === 'resolved' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}">${escapeHTML(r.status || 'new')}</span>
+            </div>
+            <p class="text-xs text-slate-200 whitespace-pre-wrap">${escapeHTML(r.message || '')}</p>
+            <div class="text-[11px] text-slate-500 break-all">${escapeHTML(r.email || '')} &bull; tab: ${escapeHTML(r.tab || '')} &bull; ${escapeHTML(r.ua || '')}</div>
+            ${r.status === 'resolved' ? '' : `<button data-action="dev-resolve" data-id="${escapeHTML(r.id)}" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-[11px] font-bold text-white">Mark resolved</button>`}
+          </div>`).join('');
+      } catch (err) {
+        box.innerHTML = '<p class="text-xs text-rose-300">Could not load reports (admin access required).</p>';
+      }
+    }
+
+    /* ---------- Demo profile (admin only, local sandbox, never synced) ---------- */
+    function buildDemoState(level) {
+      const s = createDefaultState();
+      s.legacySyncDone = true;
+      s.profileName = 'Demo Learner';
+      if (level === 'new') return s;
+      const f = level === 'some' ? 0.3 : level === 'lot' ? 0.75 : 1;
+      const acc = level === 'some' ? 0.64 : level === 'lot' ? 0.8 : 0.93;
+      const bank = BUILTIN_QUESTIONS;
+      for (const d of [1, 2, 3, 4, 5]) {
+        const cnt = bank.filter((q) => q.domain === d).length;
+        const total = Math.round(cnt * f);
+        const adj = Math.min(0.98, acc + (d % 3 - 1) * 0.03);
+        s.domains[d] = { correct: Math.round(total * adj), total };
+      }
+      s.overall.correct = [1, 2, 3, 4, 5].reduce((a, d) => a + s.domains[d].correct, 0);
+      s.overall.total = [1, 2, 3, 4, 5].reduce((a, d) => a + s.domains[d].total, 0);
+      const take = (arr) => arr.slice(0, Math.round(arr.length * f));
+      s.masteredFlashcards = take(FLASHCARDS.map((c) => c.id));
+      s.solvedPBQs = take(PBQ_LABS.map((l) => l.id));
+      s.guideReviewed = take(STUDY_GUIDE.map((g) => g.id));
+      s.missedQuestionIds = level === 'finished' ? [] : bank.filter((q, i) => i % 9 === 0).slice(0, level === 'some' ? 8 : 15).map((q) => q.id);
+
+      const nNotes = level === 'some' ? 4 : level === 'lot' ? 12 : 24;
+      const kinds = ['question', 'guide', 'flashcard', 'pbq', 'exam', 'question'];
+      const clip = (t) => String(t || '').replace(/\s+/g, ' ').slice(0, 110);
+      for (let i = 0; i < nNotes; i++) {
+        const kind = kinds[i % kinds.length];
+        const base = { id: `note_demo_${i}`, takeaway: i % 3 === 0 ? 'Remember this for the exam.' : '', createdAt: new Date(Date.now() - i * 86400000).toISOString() };
+        if (kind === 'question' || kind === 'exam') {
+          const q = bank[(i * 7) % bank.length];
+          s.notes.push({ ...base, domain: q.domain, text: clip(q.exp || q.q), notebook: kind === 'exam' ? 'Full Exams' : 'Practice Quiz', source: kind === 'exam' ? 'Highlight (exams)' : 'Highlight (quiz)',
+            ctx: { type: 'question', id: q.id, domain: q.domain, obj: objForItem(q, 'question'), snapshot: { id: q.id, domain: q.domain, q: q.q, opts: q.opts, ans: q.ans, exp: q.exp } } });
+        } else if (kind === 'guide') {
+          const g = STUDY_GUIDE[(i * 3) % STUDY_GUIDE.length];
+          s.notes.push({ ...base, domain: g.domain, text: clip(g.summary || g.title), notebook: 'Study Guide', source: 'Highlight (guide)',
+            ctx: { type: 'guide', id: g.id, domain: g.domain, obj: g.id, snapshot: { id: g.id, domain: g.domain, title: g.title } } });
+        } else if (kind === 'flashcard') {
+          const c = FLASHCARDS[(i * 5) % FLASHCARDS.length];
+          s.notes.push({ ...base, domain: c.domain, text: clip(c.back), notebook: 'Flashcards', source: 'Highlight (flashcards)',
+            ctx: { type: 'flashcard', id: c.id, domain: c.domain, obj: objForItem(c, 'flashcard'), snapshot: { id: c.id, domain: c.domain, front: c.front, back: c.back, tip: c.tip } } });
+        } else {
+          const l = PBQ_LABS[i % PBQ_LABS.length];
+          s.notes.push({ ...base, domain: l.domain, text: clip(l.title), notebook: 'PBQ Labs', source: 'Highlight (pbq)',
+            ctx: { type: 'pbq', id: l.id, domain: l.domain, obj: l.obj || objForItem(l, 'pbq'), snapshot: { id: l.id, domain: l.domain, title: l.title, scenario: pbqScenario(l), rationale: l.rationale } } });
+        }
+      }
+      const exams = level === 'some' ? [58] : level === 'lot' ? [61, 68, 74] : [66, 72, 79, 84, 88, 91];
+      exams.forEach((pct, i) => {
+        const ts = Date.now() - (exams.length - i) * 5 * 86400000;
+        s.examHistory.unshift({ id: `xdemo${i}`, ts, title: `Exam #${i + 1}`, pct, scaled: Math.round(100 + (pct / 100) * 800), date: new Date(ts).toLocaleDateString() });
+      });
+      return s;
+    }
+
+    function resetLiveSessions() {
+      if (quizTimerInterval) clearInterval(quizTimerInterval);
+      if (examTimerInterval) clearInterval(examTimerInterval);
+      quizSession = null;
+      examSession = null;
+      document.getElementById('quiz-runner-panel').classList.add('hidden');
+      document.getElementById('quiz-results-panel').classList.add('hidden');
+      document.getElementById('quiz-setup-panel').classList.remove('hidden');
+      document.getElementById('exam-runner-panel').classList.add('hidden');
+      document.getElementById('exam-results-panel').classList.add('hidden');
+      document.getElementById('exams-selector-panel').classList.remove('hidden');
+      document.getElementById('exam-submit-modal').classList.add('hidden');
+    }
+
+    function updateDemoBanner() {
+      const b = document.getElementById('demo-banner');
+      if (!b) return;
+      b.classList.toggle('hidden', !demoMode);
+      const t = document.getElementById('demo-banner-text');
+      if (t) t.textContent = demoMode ? `Demo profile (${demoLevel}). Nothing here is saved or synced.` : '';
+    }
+
+    function enterDemo(level) {
+      if (!(cloudState && cloudState.isAdmin)) return;
+      if (!demoMode) demoStash = appState;
+      resetLiveSessions();
+      demoMode = true;
+      demoLevel = level;
+      appState = buildDemoState(level);
+      fcDeck = [...FLASHCARDS];
+      fcIndex = 0;
+      fcFlipped = false;
+      updateDemoBanner();
+      switchTab('dashboard');
+      renderSettingsAccount();
+      showToast(`Demo profile loaded: ${level}.`, 'info');
+    }
+
+    function exitDemo() {
+      if (!demoMode) return;
+      resetLiveSessions();
+      appState = demoStash;
+      demoStash = null;
+      demoMode = false;
+      demoLevel = null;
+      fcDeck = [...FLASHCARDS];
+      fcIndex = 0;
+      fcFlipped = false;
+      const queued = demoQueue;
+      demoQueue = [];
+      for (const [coll, changes] of queued) cloudApplyChanges(coll, changes);
+      updateDemoBanner();
+      switchTab(activeTab === 'settings' ? 'settings' : 'dashboard');
+      renderSettingsAccount();
+      cloudRender();
+    }
+
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest && e.target.closest('[data-action]');
+      if (!btn) return;
+      const a = btn.dataset.action;
+      if (a === 'quiz-toggle-pause') toggleQuizPause();
+      else if (a === 'profile-save') {
+        const v = (document.getElementById('profile-name-input').value || '').trim().slice(0, 40);
+        if (demoMode) { showToast('Demo mode: nothing is saved.', 'info'); return; }
+        if (!v) { showToast('Enter a name first.', 'warn'); return; }
+        appState.profileName = v;
+        saveAppState(appState);
+        cloudRender();
+        showToast('Profile name saved.', 'success');
+      } else if (a === 'bug-submit') submitBugReport();
+      else if (a === 'demo-enter') enterDemo(btn.dataset.level);
+      else if (a === 'demo-exit') exitDemo();
+      else if (a === 'dev-load-reports') devLoadReports();
+      else if (a === 'dev-resolve') {
+        const FB = cloudFB();
+        if (!FB || !FB.updateReport) return;
+        Promise.resolve(FB.updateReport(btn.dataset.id, { status: 'resolved' })).then(devLoadReports).catch(() => showToast('Could not update that report.', 'error'));
+      }
+    });
+
+    /* =========================================================================
        17b. CLOUD SYNC (Firebase auth + Firestore, per-record last-write-wins)
        The firebase module script (end of file) exposes window.PrepSecFB.
        The app keeps working with no account and no connection.
        ========================================================================= */
     var cloudState = null; // var on purpose: saveAppState runs during boot, before this block executes
-    const CLOUD_COLLS = ['stats', 'fc', 'pbq', 'note', 'exam', 'guide'];
+    const CLOUD_COLLS = ['stats', 'fc', 'pbq', 'note', 'exam', 'guide', 'profile'];
     const CLOUD_META_PREFIX = 'secplus_cloud_v1_';
     const CLOUD_LASTUID_KEY = 'secplus_cloud_lastuid';
     let cloudPushTimer = null;
@@ -3954,6 +4268,7 @@
         out[`${coll}/${id}`] = { coll, id, str: JSON.stringify(data) };
       };
       add('stats', 'main', { domains: state.domains, overall: state.overall, missed: state.missedQuestionIds || [] });
+      if (state.profileName) add('profile', 'main', { name: state.profileName });
       for (const id of state.masteredFlashcards || []) add('fc', id, { v: true });
       for (const id of state.solvedPBQs || []) add('pbq', id, { v: true });
       for (const id of state.guideReviewed || []) add('guide', id, { v: true });
@@ -4002,7 +4317,7 @@
     function cloudPushDiff() {
       const cs = cloudState;
       const FB = cloudFB();
-      if (!cs || !cs.ready || !cs.uid || !FB) return 0;
+      if (!cs || !cs.ready || !cs.uid || !FB || demoMode) return 0;
       const cur = cloudDerive(appState);
       const now = Date.now();
       let n = 0;
@@ -4020,7 +4335,7 @@
         const coll = key.slice(0, slash);
         const id = key.slice(slash + 1);
         delete cs.meta.shadow[key];
-        if (coll === 'exam' || coll === 'stats') continue; // history is append-only; stats always exists
+        if (coll === 'exam' || coll === 'stats' || coll === 'profile') continue; // history is append-only; stats always exists
         cs.meta.ts[key] = now;
         const payload = coll === 'note' ? { deleted: true, updatedAt: now } : { v: false, updatedAt: now };
         Promise.resolve(FB.put(cs.uid, coll, id, payload)).catch(cloudError);
@@ -4037,6 +4352,7 @@
     function cloudApplyChanges(coll, changes) {
       const cs = cloudState;
       if (!cs || !cs.uid) return;
+      if (demoMode) { demoQueue.push([coll, changes]); return; } // applied after the demo ends
       const touched = [];
       for (const ch of changes) {
         if (ch.type === 'removed') continue;
@@ -4074,9 +4390,12 @@
         } else if (coll === 'note') {
           if (d.deleted) appState.notes = appState.notes.filter((n) => n.id !== ch.id);
           else if (d.note && d.note.id) {
+            if (!d.note.notebook) d.note.notebook = noteNotebookOf(d.note);
             const i = appState.notes.findIndex((n) => n.id === ch.id);
             if (i >= 0) appState.notes[i] = d.note; else appState.notes.unshift(d.note);
           }
+        } else if (coll === 'profile') {
+          if (typeof d.name === 'string' && d.name.trim()) appState.profileName = d.name.trim().slice(0, 40);
         } else if (coll === 'exam') {
           if (d.entry && !appState.examHistory.some((e) => cloudExamId(e) === ch.id)) {
             appState.examHistory.push(d.entry);
@@ -4099,6 +4418,7 @@
 
     function cloudRefreshUI() {
       try {
+        cloudRender();
         renderDashboard();
         if (activeTab === 'notes') renderNotesTab();
         if (activeTab === 'guide') renderStudyGuide();
@@ -4117,8 +4437,9 @@
     function cloudOnAuth(user) {
       cloudTeardown();
       clearTimeout(cloudPushTimer);
+      if (demoMode) exitDemo();
       if (!user) {
-        Object.assign(cloudState, { uid: null, user: null, ready: false, unsub: null, firstDone: {} });
+        Object.assign(cloudState, { uid: null, user: null, isAdmin: false, ready: false, unsub: null, firstDone: {} });
         cloudSetStatus('signed-out', '');
         return;
       }
@@ -4128,7 +4449,11 @@
         if (!ok) { cloudFB().signOut(); return; }
       }
       safeStorage.setItem(CLOUD_LASTUID_KEY, user.uid);
-      Object.assign(cloudState, { uid: user.uid, user, ready: false, firstDone: {}, meta: cloudLoadMeta(user.uid) });
+      Object.assign(cloudState, { uid: user.uid, user, isAdmin: false, ready: false, firstDone: {}, meta: cloudLoadMeta(user.uid) });
+      const FB0 = cloudFB();
+      if (FB0 && FB0.isAdmin) {
+        Promise.resolve(FB0.isAdmin(user.uid)).then((v) => { if (cloudState.uid === user.uid) { cloudState.isAdmin = !!v; renderSettingsAccount(); } }).catch(() => {});
+      }
       cloudSetStatus('connecting', '');
       cloudState.unsub = cloudFB().subscribe(
         user.uid,
@@ -4140,6 +4465,7 @@
             cloudState.firstDone[coll] = true;
             if (CLOUD_COLLS.every((c) => cloudState.firstDone[c])) {
               cloudState.ready = true;
+              if (!appState.profileName && user.name) { appState.profileName = String(user.name).trim().split(/\s+/)[0].slice(0, 40); saveAppState(appState); }
               cloudPushDiff();
               if (cloudState.status === 'connecting') cloudSetStatus(navigator.onLine ? 'synced' : 'offline');
             }
@@ -4152,38 +4478,13 @@
     function cloudRender() {
       if (!cloudState) return;
       const btn = document.getElementById('cloud-btn');
-      const s = cloudState.status;
-      const labels = {
-        'signed-out': ['Sign in to sync', 'bg-slate-800/90 text-slate-200 border-slate-700'],
-        connecting: ['Connecting…', 'bg-amber-500/15 text-amber-300 border-amber-500/30'],
-        syncing: ['Syncing…', 'bg-amber-500/15 text-amber-300 border-amber-500/30'],
-        synced: ['Synced', 'bg-emerald-500/15 text-emerald-300 border-emerald-500/35'],
-        offline: ['Offline · will sync', 'bg-amber-500/15 text-amber-300 border-amber-500/30'],
-        error: ['Sync error', 'bg-rose-500/15 text-rose-300 border-rose-500/35'],
-        unavailable: ['Sync unavailable', 'bg-slate-800/90 text-slate-400 border-slate-700']
-      };
-      const [text, cls] = labels[s] || labels['signed-out'];
+      const [text, cls] = CLOUD_LABELS[cloudState.status] || CLOUD_LABELS['signed-out'];
       if (btn) {
         btn.className = `px-3 py-1.5 rounded-full text-xs font-semibold border transition ${cls}`;
-        btn.textContent = `☁ ${text}`;
+        const nm = cloudState.user && appState.profileName ? ` · ${appState.profileName.slice(0, 14)}` : '';
+        btn.textContent = `☁ ${text}${nm}`;
       }
-      const body = document.getElementById('cloud-modal-body');
-      if (!body) return;
-      const u = cloudState.user;
-      const last = cloudState.lastSync ? new Date(cloudState.lastSync).toLocaleTimeString() : '—';
-      body.innerHTML = u ? `
-        <p class="text-xs text-slate-300">Signed in as <strong class="text-white">${escapeHTML(u.email || u.name || 'your account')}</strong></p>
-        <p class="text-xs text-slate-400">Status: <strong class="text-slate-200">${escapeHTML(text)}</strong> &bull; last sync ${escapeHTML(last)}</p>
-        ${cloudState.detail ? `<p class="text-xs text-rose-300">${escapeHTML(cloudState.detail)}</p>` : ''}
-        <p class="text-[11px] text-slate-500">Syncs quiz history, flashcards, PBQ progress, notes, exam history and study guide progress. Imported question packs stay on this device.</p>
-        <div class="flex flex-wrap gap-2 pt-1">
-          <button data-action="cloud-syncnow" class="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white">Sync now</button>
-          <button data-action="cloud-signout" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700">Sign out</button>
-        </div>` : `
-        <p class="text-xs text-slate-300">Sign in to keep your progress in sync between your phone and laptop. The app keeps working without an account; your progress then stays on this device only.</p>
-        ${s === 'unavailable' ? '<p class="text-xs text-amber-300">Sync could not load (you may be offline). Try again when connected.</p>' : ''}
-        ${cloudState.detail ? `<p class="text-xs text-rose-300">${escapeHTML(cloudState.detail)}</p>` : ''}
-        <button data-action="cloud-signin" class="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-xs font-bold text-slate-900">Sign in with Google</button>`;
+      renderSettingsAccount();
     }
 
     function cloudInit() {
@@ -4204,10 +4505,7 @@
         const btn = e.target.closest && e.target.closest('[data-action^="cloud-"]');
         if (!btn) return;
         const a = btn.dataset.action;
-        const modal = document.getElementById('cloud-modal');
-        if (a === 'cloud-open') { cloudRender(); modal.classList.remove('hidden'); }
-        else if (a === 'cloud-close') modal.classList.add('hidden');
-        else if (a === 'cloud-signin') {
+        if (a === 'cloud-signin') {
           if (!cloudFB()) { cloudSetStatus('unavailable'); return; }
           cloudSetStatus('connecting', '');
           try { await cloudFB().signIn(); } catch (err) {
@@ -4215,7 +4513,6 @@
           }
         } else if (a === 'cloud-signout') {
           if (cloudFB()) await cloudFB().signOut();
-          modal.classList.add('hidden');
         } else if (a === 'cloud-syncnow') {
           if (!cloudState.ready) return;
           cloudSetStatus('syncing');
@@ -4233,19 +4530,8 @@
     switchTab('dashboard');
 
     function updateStatusPill() {
-      const pill = document.getElementById('engine-status-pill');
-      const dot = document.getElementById('engine-status-dot');
-      const text = document.getElementById('engine-status-text');
-      if (!pill || !dot || !text) return;
-      if (storageOk) {
-        pill.className = 'flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/35';
-        dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
-        text.textContent = 'V7 Engine Ready • Saved';
-      } else {
-        pill.className = 'flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-rose-500/15 text-rose-300 border border-rose-500/35';
-        dot.className = 'w-2 h-2 rounded-full bg-rose-400 animate-pulse';
-        text.textContent = 'Storage blocked • Export a backup';
-      }
+      const w = document.getElementById('storage-warning');
+      if (w) w.classList.toggle('hidden', storageOk);
     }
     updateStatusPill();
   })();
@@ -4255,7 +4541,7 @@
     // PrepSec+ cloud transport (Firebase Auth + Firestore). The app works without it.
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, setDoc, onSnapshot, waitForPendingWrites } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, setDoc, getDoc, getDocs, addDoc, updateDoc, query, orderBy, limit, onSnapshot, waitForPendingWrites } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCORjCVH-z5BQGA0Oxa3T1Zs1VDtnzYR_Y",
@@ -4305,7 +4591,17 @@
         return () => unsubs.forEach((u) => u());
       },
       put(uid, c, id, data) { return setDoc(doc(db, 'users', uid, c, id), data); },
-      flush() { return waitForPendingWrites(db); }
+      flush() { return waitForPendingWrites(db); },
+      // Admin check: true only if the signed-in user has a document in the 'admins' collection.
+      async isAdmin(uid) {
+        try { return (await getDoc(doc(db, 'admins', uid))).exists(); } catch (e) { return false; }
+      },
+      addReport(data) { return addDoc(collection(db, 'bugReports'), data); },
+      async listReports() {
+        const snap = await getDocs(query(collection(db, 'bugReports'), orderBy('createdAt', 'desc'), limit(100)));
+        return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      },
+      updateReport(id, patch) { return updateDoc(doc(db, 'bugReports', id), patch); }
     };
     window.dispatchEvent(new Event('prepsec-fb-ready'));
   </script>

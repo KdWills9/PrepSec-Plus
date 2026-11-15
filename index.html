@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PrepSec+ V8 | CompTIA Security+ (SY0-701) Command Center</title>
+  <title>PrepSec+ V9 | CompTIA Security+ (SY0-701) Command Center</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -77,7 +77,7 @@
       box-shadow: 0 0 0 1px rgba(250, 204, 21, 0.45);
     }
   </style>
-  <style>.quiz-paused #quiz-question-stem, .quiz-paused #quiz-options-list, .quiz-paused #quiz-explanation-box, .quiz-paused #quiz-nav-row { display: none !important; }</style>
+  <style>.quiz-paused #quiz-question-stem, .quiz-paused #quiz-options-list, .quiz-paused #quiz-explanation-box, .quiz-paused #quiz-nav-row { display: none !important; } #highlight-popover { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); max-height: 92vh; overflow-y: auto; }</style>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f172a">
   <meta name="mobile-web-app-capable" content="yes">
@@ -98,7 +98,7 @@
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <h1 class="text-base sm:text-lg font-bold tracking-tight text-white">PrepSec+ V8</h1>
+            <h1 class="text-base sm:text-lg font-bold tracking-tight text-white">PrepSec+ V9</h1>
             <span class="px-2 py-0.5 text-[11px] font-semibold rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">SY0-701</span>
           </div>
           <p class="text-xs text-slate-400">CompTIA Security+ SY0-701 Study Hub</p>
@@ -228,8 +228,8 @@
         </div>
         <div class="glass-card rounded-2xl p-4">
           <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Active Question Bank</div>
-          <div id="kpi-bank-count" class="text-2xl sm:text-3xl font-extrabold text-indigo-400 mt-1">508+</div>
-          <div id="kpi-bank-sub" class="text-xs text-slate-400 mt-1">508 Built-in + 0 Imported</div>
+          <div id="kpi-bank-count" class="text-2xl sm:text-3xl font-extrabold text-indigo-400 mt-1">--</div>
+          <div id="kpi-bank-sub" class="text-xs text-slate-400 mt-1">built-in questions</div>
         </div>
         <div class="glass-card rounded-2xl p-4">
           <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Mastered Flashcards</div>
@@ -873,109 +873,6 @@
     /* =========================================================================
        3. PARAMETERIZED SCENARIO GENERATOR (RISK MATH, PORTS/ACLS, LOG TRIAGE)
        ========================================================================= */
-    function generateParameterizedQuestions(count, seedOffset = 1) {
-      const generated = [];
-      const scenarios = [
-        // Risk Math Generator
-        (i, slot) => {
-          const avList = [40000, 60000, 80000, 100000, 120000, 200000];
-          const efList = [0.25, 0.30, 0.40, 0.50, 0.60];
-          const aroList = [0.10, 0.20, 0.25, 0.50, 2];
-          const k = slot + seedOffset;
-          const av = avList[k % avList.length];
-          const ef = efList[(k + 1) % efList.length];
-          const aro = aroList[(k * 3 + Math.floor(k / 5)) % aroList.length];
-          const sle = Math.round(av * ef);
-          const ale = Math.round(sle * aro);
-          const d1 = Math.round(av * aro);
-          const d2 = sle;
-          const d3 = Math.round(ale * 2.5);
-          const fmt = (n) => '$' + n.toLocaleString('en-US');
-          const opts = [fmt(ale), fmt(d2), fmt(d1), fmt(d3)];
-          const uniqueOpts = Array.from(new Set(opts));
-          while (uniqueOpts.length < 4) uniqueOpts.push(fmt(ale + uniqueOpts.length * 1500));
-          return {
-            id: `dyn_risk_${av}_${ef}_${aro}`,
-            domain: 5,
-            q: `A risk analyst evaluates a critical storage cluster with an Asset Value (AV) of ${fmt(av)}, an Exposure Factor (EF) of ${ef.toFixed(2)}, and an Annualized Rate of Occurrence (ARO) of ${aro}. What is the Annualized Loss Expectancy (ALE)?`,
-            opts: uniqueOpts,
-            ans: 0,
-            exp: `SLE = AV (${fmt(av)}) × EF (${ef.toFixed(2)}) = ${fmt(sle)}. ALE = SLE (${fmt(sle)}) × ARO (${aro}) = ${fmt(ale)}.`
-          };
-        },
-        // Port & Protocol Hardening Generator
-        (i, slot) => {
-          const items = [
-            { insecure: 'Telnet (TCP 23)', secure: 'SSH (TCP 22)', desc: 'remote router CLI administration', why: 'Telnet transmits credentials in cleartext; SSH encrypts administrative terminal sessions over TCP 22.' },
-            { insecure: 'FTP (TCP 20/21)', secure: 'SFTP (TCP 22)', desc: 'automated nightly partner file transfers', why: 'Standard FTP sends usernames, passwords, and files unencrypted; SFTP tunnels file transfers over SSH (TCP 22).' },
-            { insecure: 'SNMPv1/v2c (UDP 161)', secure: 'SNMPv3 with authPriv (UDP 161)', desc: 'network switch telemetry polling', why: 'SNMPv1/v2c uses cleartext community strings; SNMPv3 adds authentication and AES encryption.' },
-            { insecure: 'LDAP (TCP 389)', secure: 'LDAPS (TCP 636)', desc: 'directory authentication queries', why: 'Plaintext LDAP exposes bind credentials; LDAPS wraps directory traffic in TLS over TCP 636.' },
-            { insecure: 'HTTP (TCP 80)', secure: 'HTTPS (TCP 443)', desc: 'customer web portal sessions', why: 'HTTP exposes session cookies to passive sniffing; HTTPS enforces TLS encryption on TCP 443.' }
-          ];
-          const pickIdx = (slot + seedOffset) % items.length;
-          const pick = items[pickIdx];
-          // Exclude distractors that share the correct answer's port (e.g., SSH vs SFTP on TCP 22) to avoid ambiguity
-          const others = items
-            .filter((x) => x.secure !== pick.secure && !(x.secure.includes('TCP 22') && pick.secure.includes('TCP 22')))
-            .slice(0, 3)
-            .map((x) => x.secure);
-          return {
-            id: `dyn_port_${pickIdx}`,
-            domain: 3,
-            q: `During a network hardening audit, an engineer discovers legacy ${pick.insecure} enabled for ${pick.desc}. Which encrypted protocol should replace it?`,
-            opts: [pick.secure, ...others],
-            ans: 0,
-            exp: pick.why
-          };
-        },
-        // Log Triage Generator
-        (i, slot) => {
-          const logs = [
-            {
-              raw: `SRC=185.220.101.23 DST=10.20.4.15 DPT=445 PROTO=TCP FLAGS=SYN (4,200 attempts in 12s)`,
-              attack: 'SMB brute-force / lateral worm propagation scan (TCP 445)',
-              distractors: ['NTP amplification flood', 'BGP route hijacking', 'Bluetooth bluesnarfing'],
-              exp: 'High-rate SYN connections targeting TCP port 445 indicate automated SMB enumeration or brute-force/worm activity.'
-            },
-            {
-              raw: `GET /search.php?q=%27%20UNION%20SELECT%20username,password%20FROM%20users-- HTTP/1.1 200 OK`,
-              attack: 'UNION-based SQL Injection (SQLi) data extraction',
-              distractors: ['Cross-Site Request Forgery (CSRF)', 'ARP cache poisoning', 'DNS zone transfer (AXFR)'],
-              exp: 'The URL-encoded `\' UNION SELECT ... FROM users--` payload attempts to append attacker-controlled queries to extract database credentials.'
-            },
-            {
-              raw: `Alert: Process lsass.exe accessed by rundll32.exe comsvcs.dll, MiniDump 624 C:\\Temp\\debug.dmp`,
-              attack: 'OS credential dumping from LSASS process memory',
-              distractors: ['Container escape via Docker socket', 'Rogue DHCP server lease exhaustion', 'SSL stripping downgrade'],
-              exp: 'Abusing `comsvcs.dll MiniDump` against `lsass.exe` dumps Windows authentication secrets from memory for offline credential extraction.'
-            }
-          ];
-          const logIdx = (slot + seedOffset) % logs.length;
-          const l = logs[logIdx];
-          return {
-            id: `dyn_log_${logIdx}`,
-            domain: 4,
-            q: `A SOC analyst inspects the following raw telemetry event:\n"${l.raw}"\nWhich malicious activity is occurring?`,
-            opts: [l.attack, ...l.distractors],
-            ans: 0,
-            exp: l.exp
-          };
-        }
-      ];
-
-      // Per-scenario counter (slot) keeps each generator cycling independently; dedupe by stable ID
-      const seen = new Set();
-      for (let i = 0; i < count; i++) {
-        const builder = scenarios[i % scenarios.length];
-        const slot = Math.floor(i / scenarios.length);
-        const item = builder(i, slot);
-        if (seen.has(item.id)) continue;
-        seen.add(item.id);
-        generated.push(item);
-      }
-      return generated;
-    }
-
     /* =========================================================================
        4. 35 DEFINITION-FIRST FLASHCARDS
        ========================================================================= */
@@ -1144,8 +1041,9 @@
         missedQuestionIds: [],
         notes: [],
         examHistory: [],
-        importedPacks: [], // legacy field, kept empty (the importer was removed in V8)
         profileName: '',
+        conceptStats: {}, // { conceptId: { d: domain, c: correct, t: total } } since V9
+        conceptSeen: {}, // { conceptId: [recently shown variant ids] } (this device only)
         legacySyncDone: false,
         legacySyncReport: null,
         guideReviewed: []
@@ -1204,8 +1102,7 @@
         solvedPBQs: [],
         missedQuestionIds: [],
         notes: [],
-        examHistory: [],
-        importedPacks: []
+        examHistory: []
       };
 
       if (!parsed || typeof parsed !== 'object') return result;
@@ -1360,20 +1257,6 @@
         result.examHistory = parsed.examHistory.slice(0, 25);
       }
 
-      // 9. Extract imported custom question packs
-      if (Array.isArray(parsed.importedPacks)) {
-        result.importedPacks = parsed.importedPacks;
-      } else if (Array.isArray(parsed.customQuestions) && parsed.customQuestions.length > 0) {
-        const normalizedQs = normalizeIncomingQuestions(parsed.customQuestions, 'legacy_custom');
-        if (normalizedQs.length > 0) {
-          result.importedPacks = [{
-            pack_name: 'Legacy Custom Question Pack',
-            version: '1.0',
-            questions: normalizedQs
-          }];
-        }
-      }
-
       return result;
     }
 
@@ -1413,8 +1296,7 @@
           domains: extracted.domains,
           pbqs: extracted.solvedPBQs.length,
           notes: extracted.notes.length,
-          flashcards: extracted.masteredFlashcards.length,
-          packs: extracted.importedPacks.length
+          flashcards: extracted.masteredFlashcards.length
         });
 
         // Reconcile domain stats if V5 has 0 or lower total than legacy
@@ -1463,15 +1345,6 @@
             mergedAny = true;
           }
         }
-
-        // Merge imported packs
-        for (const pack of extracted.importedPacks) {
-          const exists = targetState.importedPacks.some((p) => p.pack_name === pack.pack_name);
-          if (!exists && Array.isArray(pack.questions) && pack.questions.length > 0) {
-            targetState.importedPacks.push(pack);
-            mergedAny = true;
-          }
-        }
       }
 
       if (mergedAny) {
@@ -1508,7 +1381,7 @@
       }
 
       // Legacy V4/V3 reconciliation runs only once per browser profile. After that, deletions
-      // (notes, mastered cards, missed items, packs) stay deleted. Use "Force Re-Sync" to run it manually.
+      // (notes, mastered cards, missed items) stay deleted. Use "Force Re-Sync" to run it manually.
       let syncInfo = { mergedAny: false, keys: [], diagnostics: [] };
       if (!state.legacySyncDone) {
         if (!hadV5) {
@@ -1527,15 +1400,6 @@
       storageOk = safeStorage.setItem(STORAGE_KEY_V5, JSON.stringify(stateObj));
       if (typeof updateStatusPill === 'function') updateStatusPill();
       if (typeof cloudOnLocalSave === 'function') cloudOnLocalSave();
-    }
-
-    // Generated (dyn_*) questions are not retrievable later, so they never enter the missed queue
-    function recordMissState(stateObj, q, isCorrect) {
-      if (isCorrect) {
-        stateObj.missedQuestionIds = stateObj.missedQuestionIds.filter((id) => id !== q.id);
-      } else if (!String(q.id).startsWith('dyn_') && !stateObj.missedQuestionIds.includes(q.id)) {
-        stateObj.missedQuestionIds.push(q.id);
-      }
     }
 
     /* =========================================================================
@@ -1571,40 +1435,6 @@
       return -1;
     }
 
-    function normalizeIncomingQuestions(rawList, prefix = 'imp') {
-      const out = [];
-      out.rejected = 0;
-      if (!Array.isArray(rawList)) return out;
-      const seenLocal = new Set();
-      rawList.forEach((item, idx) => {
-        if (!item || typeof item !== 'object') { out.rejected += 1; return; }
-        const qText = item.q || item.question || item.stem || item.prompt;
-        const opts = item.opts || item.options || item.choices;
-        if (!qText || !Array.isArray(opts) || opts.length < 2 || opts.length > 8) { out.rejected += 1; return; }
-
-        const domId = normalizeDomainId(item.domain || item.domainId || item.category) || 1;
-        const answerCandidates = [item.ans, item.answer, item.correctIndex, item.correct, item.correct_answer, item.correctAnswer, item.answerIndex];
-        const rawAns = answerCandidates.find((v) => v !== undefined && v !== null);
-        const ansIdx = rawAns === undefined ? -1 : resolveAnswerIndex(rawAns, opts);
-        // Never guess: an unresolvable answer key would silently mark the wrong option as correct
-        if (ansIdx < 0) { out.rejected += 1; return; }
-
-        const stableId = String(item.id || `${prefix}_${stableHash(String(qText) + '|' + opts.join('|'))}`);
-        if (seenLocal.has(stableId)) { out.rejected += 1; return; }
-        seenLocal.add(stableId);
-
-        out.push({
-          id: stableId,
-          domain: domId,
-          q: String(qText),
-          opts: opts.map((o) => String(o)),
-          ans: ansIdx,
-          exp: String(item.exp || item.explanation || item.rationale || 'Review official SY0-701 domain objectives for this concept.')
-        });
-      });
-      return out;
-    }
-
     function fisherYatesShuffleQuestion(questionObj) {
       const indices = questionObj.opts.map((_, idx) => idx);
       for (let i = indices.length - 1; i > 0; i--) {
@@ -1622,21 +1452,9 @@
     }
 
     function getCombinedQuestionBank() {
-      const imported = [];
-      const seenIds = new Set(BUILTIN_QUESTIONS.map((q) => q.id));
-      for (const pack of appState.importedPacks) {
-        if (!Array.isArray(pack.questions)) continue;
-        for (const q of pack.questions) {
-          if (!seenIds.has(q.id)) {
-            seenIds.add(q.id);
-            imported.push(q);
-          }
-        }
-      }
       return {
         builtin: BUILTIN_QUESTIONS,
-        imported,
-        all: [...BUILTIN_QUESTIONS, ...imported]
+        all: BUILTIN_QUESTIONS
       };
     }
 
@@ -1645,15 +1463,15 @@
        ========================================================================= */
     const boot = loadAppState();
     let appState = boot.state;
-    const hadLegacyPacks = Array.isArray(appState.importedPacks) && appState.importedPacks.length > 0;
-    appState.importedPacks = [];
+    const hadLegacyPacks = Object.prototype.hasOwnProperty.call(appState, 'importedPacks');
+    delete appState.importedPacks; // question bank importing was removed
     let lastDiagnostics = boot.syncInfo.diagnostics;
 
     // One-time cleanup: drop ghost / unresolvable IDs (old generated questions, stale legacy IDs) from the missed queue
     (function pruneMissedQueue() {
       const validIds = new Set(getCombinedQuestionBank().all.map((q) => q.id));
       const before = appState.missedQuestionIds.length;
-      appState.missedQuestionIds = appState.missedQuestionIds.filter((id) => validIds.has(id));
+      appState.missedQuestionIds = appState.missedQuestionIds.filter((id) => validIds.has(id) || String(id).startsWith('concept:calc_'));
       if (appState.missedQuestionIds.length !== before) saveAppState(appState);
     })();
 
@@ -1682,8 +1500,8 @@
       let weakest = 3;
       let lowest = 2;
       for (const d of [1, 2, 3, 4, 5]) {
-        const st = appState.domains[d];
-        if (st.total === 0) return d;
+        const st = domStat(d);
+        if (st.rawTotal === 0) return d;
         const smoothed = (st.correct + 1) / (st.total + 2);
         if (smoothed < lowest) {
           lowest = smoothed;
@@ -1699,14 +1517,16 @@
       const domTotal = [1, 2, 3, 4, 5].reduce((acc, d) => acc + appState.domains[d].total, 0);
       const totalC = domTotal > 0 ? domCorrect : appState.overall.correct;
       const totalT = domTotal > 0 ? domTotal : appState.overall.total;
-      const accPct = totalT > 0 ? Math.round((totalC / totalT) * 100) : 0;
+      const effC = [1, 2, 3, 4, 5].reduce((acc, d) => acc + domStat(d).correct, 0);
+      const effT = [1, 2, 3, 4, 5].reduce((acc, d) => acc + domStat(d).total, 0);
+      const accPct = domTotal > 0 && effT > 0 ? Math.round((effC / effT) * 100) : (totalT > 0 ? Math.round((totalC / totalT) * 100) : 0);
       const scaledEst = totalT > 0 ? Math.min(900, Math.max(100, Math.round(100 + (accPct / 100) * 800))) : '--';
 
       document.getElementById('kpi-accuracy').textContent = `${accPct}%`;
       document.getElementById('kpi-accuracy-sub').textContent = `${totalC} / ${totalT} questions • Est. ${scaledEst}/900`;
 
-      document.getElementById('kpi-bank-count').textContent = `${bank.all.length}+`;
-      document.getElementById('kpi-bank-sub').textContent = `${bank.builtin.length} Built-in + ${bank.imported.length} Imported`;
+      document.getElementById('kpi-bank-count').textContent = String(bank.builtin.length);
+      document.getElementById('kpi-bank-sub').textContent = 'built-in questions';
 
       document.getElementById('kpi-flashcards').innerHTML = `${appState.masteredFlashcards.length} <span class="text-base font-normal text-slate-400">/ ${FLASHCARDS.length}</span>`;
       document.getElementById('kpi-pbqs').innerHTML = `${appState.solvedPBQs.length} <span class="text-base font-normal text-slate-400">/ ${PBQ_LABS.length}</span>`;
@@ -1732,7 +1552,8 @@
       barsEl.innerHTML = [1, 2, 3, 4, 5].map((d) => {
         const meta = DOMAIN_META[d];
         const st = appState.domains[d];
-        const pct = st.total > 0 ? Math.round((st.correct / st.total) * 100) : 0;
+        const ds = domStat(d);
+        const pct = ds.total > 0 ? Math.round((ds.correct / ds.total) * 100) : 0;
         const barColor = pct >= 80 ? 'bg-emerald-500' : pct >= 65 ? 'bg-indigo-500' : st.total > 0 ? 'bg-amber-500' : 'bg-slate-700';
         return `
           <div class="space-y-1.5">
@@ -1760,7 +1581,7 @@
         missedDesc.textContent = 'Questions missed in prior drills ready for spaced-repetition review:';
         const qMap = new Map(bank.all.map((q) => [q.id, q]));
         missedPreview.innerHTML = appState.missedQuestionIds.slice(0, 6).map((id) => {
-          const item = qMap.get(id);
+          const item = qMap.get(id) || missedPreviewItem(id);
           if (!item) return '';
           return `
             <div class="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 text-xs">
@@ -1794,12 +1615,12 @@
       const mode = document.getElementById('quiz-mode-select').value;
       const timed = document.getElementById('quiz-timer-select').value === 'on';
 
-      const bank = getCombinedQuestionBank().all;
+      const fullBank = getCombinedQuestionBank().all;
+      const bank = collapseVariants([...fullBank, ...freshCalcSet()]);
       let pool = [];
 
       if (domainVal === 'missed') {
-        const missedSet = new Set(appState.missedQuestionIds);
-        pool = bank.filter((q) => missedSet.has(q.id));
+        pool = buildMissedPool(fullBank);
         if (pool.length === 0) {
           showToast('No missed questions queued! Launching weakest domain drill instead.', 'info');
           pool = bank.filter((q) => q.domain === getWeakestDomainId());
@@ -1835,6 +1656,7 @@
       }
 
       const selected = pool.slice(0, count).map(fisherYatesShuffleQuestion);
+      selected.forEach(noteSeen);
 
       quizSession = {
         questions: selected,
@@ -1937,6 +1759,7 @@
         appState.domains[dom].total += 1;
         if (isCorrect) appState.domains[dom].correct += 1;
         recordMissState(appState, q, isCorrect);
+        recordConceptAttempt(appState, q, isCorrect);
       }
 
       appState.overall.correct = [1, 2, 3, 4, 5].reduce((acc, d) => acc + appState.domains[d].correct, 0);
@@ -2172,6 +1995,7 @@
           appState.domains[dom].total += 1;
           if (isRight) appState.domains[dom].correct += 1;
           recordMissState(appState, q, isRight);
+          recordConceptAttempt(appState, q, isRight);
         }
       }
 
@@ -3205,7 +3029,6 @@
       for (const n of extracted.notes) {
         if (!appState.notes.some((ex) => ex.text === n.text)) appState.notes.push(n);
       }
-      appState.importedPacks = [];
       for (const eh of extracted.examHistory) {
         if (!appState.examHistory.some((ex) => ex.title === eh.title && ex.date === eh.date && ex.scaled === eh.scaled)) appState.examHistory.push(eh);
       }
@@ -3249,7 +3072,7 @@
       for (const d of [1, 2, 3, 4, 5]) {
         const quota = EXAM_DOMAIN_QUOTA[d];
         // Stable per-domain order, then rotate the window by exam number so exams overlap as little as possible
-        let pool = seededShuffle(bank.filter((q) => q.domain === d), 1000 + d);
+        let pool = dedupeByConcept(seededShuffle(bank.filter((q) => q.domain === d), 1000 + d));
         if (pool.length < quota) {
           const ids = new Set(pool.map((q) => q.id));
           const extra = generateParameterizedQuestions(60, examNum * 7).filter((v) => v.domain === d && !ids.has(v.id));
@@ -3776,10 +3599,6 @@
         document.getElementById('highlight-domain-select').value = String(domainFromContext(pendingHighlightCtx) || detectContextDomain());
         document.getElementById('highlight-notebook-select').value = notebookForHighlight(pendingHighlightCtx);
         popover.classList.remove('hidden');
-        const left = Math.min(window.innerWidth - 335, Math.max(12, e.clientX - 140));
-        const top = Math.min(window.innerHeight - 230, Math.max(12, e.clientY + 14));
-        popover.style.left = `${left}px`;
-        popover.style.top = `${top}px`;
       }
     });
 
@@ -3818,7 +3637,7 @@
     var demoStash = null;
     var demoLevel = null;
     var demoQueue = [];
-    const APP_VERSION = 'V8';
+    const APP_VERSION = 'V9';
 
     function pad2(n) { return String(n).padStart(2, '0'); }
     function clockText(sec) {
@@ -3940,41 +3759,6 @@
           </div>
           <button data-action="delete-note" data-note-id="${escapeHTML(n.id)}" class="text-xs text-slate-500 hover:text-rose-400 px-2 py-1 rounded shrink-0">Delete</button>
         </div>`;
-    }
-
-    function renderNotesTab() {
-      const query = (document.getElementById('notes-search-input')?.value || '').trim().toLowerCase();
-      const container = document.getElementById('notes-domain-groups');
-      container.innerHTML = [1, 2, 3, 4, 5].map((d) => {
-        const meta = DOMAIN_META[d];
-        const domainNotes = appState.notes.filter((n) => {
-          if (Number(n.domain) !== d) return false;
-          if (!query) return true;
-          return String(n.text || '').toLowerCase().includes(query) || (n.takeaway || '').toLowerCase().includes(query);
-        });
-        const groups = NOTEBOOKS
-          .map((nb) => ({ nb, items: domainNotes.filter((n) => noteNotebookOf(n) === nb) }))
-          .filter((g) => g.items.length > 0);
-        return `
-          <details open class="glass-card rounded-2xl p-4 sm:p-5" data-domain-group="${d}">
-            <summary class="cursor-pointer flex items-center justify-between text-sm font-bold text-white list-none">
-              <span>${meta.code} ${escapeHTML(meta.name)}</span>
-              <span class="px-2.5 py-0.5 rounded-full text-xs bg-indigo-500/20 text-indigo-300">${domainNotes.length} Notes</span>
-            </summary>
-            <div class="mt-3 space-y-3">
-              ${groups.length === 0
-                ? '<p class="text-xs text-slate-500">No saved notes in this domain yet. Highlight any text during a quiz, flashcard, PBQ, exam or study guide section to capture one.</p>'
-                : groups.map((g) => `
-                  <details open class="rounded-xl border border-slate-800 bg-slate-950/40 p-3" data-notebook="${escapeHTML(g.nb)}">
-                    <summary class="cursor-pointer flex items-center justify-between text-xs font-bold text-indigo-200 list-none">
-                      <span>&#128211; ${escapeHTML(g.nb)}</span>
-                      <span class="px-2 py-0.5 rounded-full text-[11px] bg-slate-800 text-slate-300">${g.items.length}</span>
-                    </summary>
-                    <div class="mt-2.5 space-y-2.5">${g.items.map(noteCardHTML).join('')}</div>
-                  </details>`).join('')}
-            </div>
-          </details>`;
-      }).join('');
     }
 
     /* ---------- Settings: account, profile, bug reports, developer tools ---------- */
@@ -4246,6 +4030,334 @@
     });
 
     /* =========================================================================
+       17a2. V9: CONCEPT ENGINE, CALCULATION TEMPLATES, NOTES NAVIGATION
+       ========================================================================= */
+
+    /* ---------- Concepts: every question belongs to a concept tied to an objective ---------- */
+    // A concept is one idea the exam can ask about. Today each hand-written question is its own
+    // concept ("c_<id>"). Variants written later share a concept by setting the same `concept` field.
+    function conceptOf(q) { return (q && q.concept) || ('c_' + (q && q.id)); }
+
+    const builtinById = new Map();
+    function builtinLookup(id) {
+      if (builtinById.size === 0) for (const q of BUILTIN_QUESTIONS) builtinById.set(q.id, q);
+      return builtinById.get(id) || null;
+    }
+
+    // Hand-written conversions of the old generated port and log questions (no random numbers in them)
+    (function addStaticLegacyQuestions() {
+      const ports = [
+        { insecure: 'Telnet (TCP 23)', secure: 'SSH (TCP 22)', desc: 'remote router CLI administration', why: 'Telnet transmits credentials in cleartext; SSH encrypts administrative terminal sessions over TCP 22.' },
+        { insecure: 'FTP (TCP 20/21)', secure: 'SFTP (TCP 22)', desc: 'automated nightly partner file transfers', why: 'Standard FTP sends usernames, passwords, and files unencrypted; SFTP tunnels file transfers over SSH (TCP 22).' },
+        { insecure: 'SNMPv1/v2c (UDP 161)', secure: 'SNMPv3 with authPriv (UDP 161)', desc: 'network switch telemetry polling', why: 'SNMPv1/v2c uses cleartext community strings; SNMPv3 adds authentication and AES encryption.' },
+        { insecure: 'LDAP (TCP 389)', secure: 'LDAPS (TCP 636)', desc: 'directory authentication queries', why: 'Plaintext LDAP exposes bind credentials; LDAPS wraps directory traffic in TLS over TCP 636.' },
+        { insecure: 'HTTP (TCP 80)', secure: 'HTTPS (TCP 443)', desc: 'customer web portal sessions', why: 'HTTP exposes session cookies to passive sniffing; HTTPS enforces TLS encryption on TCP 443.' }
+      ];
+      ports.forEach((p, i) => {
+        const others = ports.filter((x) => x.secure !== p.secure && !(x.secure.includes('TCP 22') && p.secure.includes('TCP 22'))).slice(0, 3).map((x) => x.secure);
+        BUILTIN_QUESTIONS.push({ id: `q9_port_${i}`, domain: 3, q: `During a network hardening audit, an engineer discovers legacy ${p.insecure} enabled for ${p.desc}. Which encrypted protocol should replace it?`, opts: [p.secure, ...others], ans: 0, exp: p.why });
+      });
+      const logs = [
+        { raw: 'SRC=185.220.101.23 DST=10.20.4.15 DPT=445 PROTO=TCP FLAGS=SYN (4,200 attempts in 12s)', attack: 'SMB brute-force / lateral worm propagation scan (TCP 445)', distractors: ['NTP amplification flood', 'BGP route hijacking', 'Bluetooth bluesnarfing'], exp: 'High-rate SYN connections targeting TCP port 445 indicate automated SMB enumeration or brute-force/worm activity.' },
+        { raw: 'GET /search.php?q=%27%20UNION%20SELECT%20username,password%20FROM%20users-- HTTP/1.1 200 OK', attack: 'UNION-based SQL Injection (SQLi) data extraction', distractors: ['Cross-Site Request Forgery (CSRF)', 'ARP cache poisoning', 'DNS zone transfer (AXFR)'], exp: 'The URL-encoded UNION SELECT payload attempts to append attacker-controlled queries to extract database credentials.' },
+        { raw: 'Alert: Process lsass.exe accessed by rundll32.exe comsvcs.dll, MiniDump 624 C:\\Temp\\debug.dmp', attack: 'OS credential dumping from LSASS process memory', distractors: ['Container escape via Docker socket', 'Rogue DHCP server lease exhaustion', 'SSL stripping downgrade'], exp: 'Abusing comsvcs.dll MiniDump against lsass.exe dumps Windows authentication secrets from memory for offline credential extraction.' }
+      ];
+      logs.forEach((l, i) => {
+        BUILTIN_QUESTIONS.push({ id: `q9_log_${i}`, domain: 4, q: `A SOC analyst inspects the following raw telemetry event:\n"${l.raw}"\nWhich malicious activity is occurring?`, opts: [l.attack, ...l.distractors], ans: 0, exp: l.exp });
+      });
+    })();
+
+    // Tag every built-in question with a concept and the SY0-701 objective it belongs to
+    (function tagQuestions() {
+      for (const q of BUILTIN_QUESTIONS) {
+        if (!q.concept) q.concept = 'c_' + q.id;
+        if (!q.obj || !findGuideObj(q.obj)) q.obj = objForItem(q, 'question');
+      }
+    })();
+
+    /* ---------- Calculation templates: same concept, new numbers every time ---------- */
+    const CALC_CONCEPTS = {
+      calc_ale: { domain: 5, obj: '5.2', label: 'Annualized loss expectancy (ALE)' },
+      calc_sle: { domain: 5, obj: '5.2', label: 'Single loss expectancy (SLE)' },
+      calc_subnet_hosts: { domain: 3, obj: '3.2', label: 'Subnetting: usable hosts' },
+      calc_subnet_mask: { domain: 3, obj: '3.2', label: 'Subnetting: CIDR to mask' },
+      calc_raid: { domain: 3, obj: '3.4', label: 'RAID usable capacity' }
+    };
+    const CALC_KEYS = Object.keys(CALC_CONCEPTS);
+    const cRand = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+    const cPick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+    const cMoney = (n) => '$' + Math.round(n).toLocaleString('en-US');
+
+    function calcFinish(concept, q, correct, wrong, exp) {
+      const wanted = [];
+      const seen = new Set([correct]);
+      for (const w of wrong) { if (!seen.has(w) && wanted.length < 3) { seen.add(w); wanted.push(w); } }
+      return {
+        id: `${concept}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+        concept,
+        calc: true,
+        domain: CALC_CONCEPTS[concept].domain,
+        obj: findGuideObj(CALC_CONCEPTS[concept].obj) ? CALC_CONCEPTS[concept].obj : undefined,
+        q, opts: [correct, ...wanted], ans: 0, exp
+      };
+    }
+
+    function makeCalcQuestion(concept) {
+      if (concept === 'calc_ale') {
+        const av = cPick([25000, 40000, 60000, 80000, 120000, 150000, 250000, 400000]);
+        const ef = cPick([0.1, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.75]);
+        const aro = cPick([0.1, 0.2, 0.25, 0.5, 1, 2, 3, 4]);
+        const sle = av * ef; const ale = sle * aro;
+        const q = `A risk analyst evaluates a critical storage cluster with an Asset Value (AV) of ${cMoney(av)}, an Exposure Factor (EF) of ${ef.toFixed(2)}, and an Annualized Rate of Occurrence (ARO) of ${aro}. What is the Annualized Loss Expectancy (ALE)?`;
+        return calcFinish(concept, q, cMoney(ale), [cMoney(sle), cMoney(av * aro), cMoney(ale * 2.5), cMoney(av * ef + aro), cMoney(ale + 1500)],
+          `SLE = AV (${cMoney(av)}) × EF (${ef.toFixed(2)}) = ${cMoney(sle)}. ALE = SLE (${cMoney(sle)}) × ARO (${aro}) = ${cMoney(ale)}.`);
+      }
+      if (concept === 'calc_sle') {
+        const av = cPick([30000, 50000, 75000, 90000, 200000, 500000]);
+        const ef = cPick([0.1, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.8]);
+        const sle = av * ef;
+        const q = `A server room holds equipment worth ${cMoney(av)}. A flood would destroy ${Math.round(ef * 100)}% of its value. What is the Single Loss Expectancy (SLE) for one flood?`;
+        return calcFinish(concept, q, cMoney(sle), [cMoney(av * (1 - ef)), cMoney(av / ef), cMoney(av), cMoney(sle * 2), cMoney(sle + 1000)],
+          `SLE = Asset Value (${cMoney(av)}) × Exposure Factor (${ef.toFixed(2)}) = ${cMoney(sle)}.`);
+      }
+      if (concept === 'calc_subnet_hosts') {
+        const p = cRand(20, 30);
+        const total = Math.pow(2, 32 - p);
+        const usable = total - 2;
+        const q = `A network engineer places a new VLAN on a /${p} subnet. How many usable host addresses does the subnet provide?`;
+        return calcFinish(concept, q, String(usable), [String(total), String(total - 1), String(total * 2 - 2), String(total / 2 - 2), String(usable + 4)],
+          `A /${p} leaves ${32 - p} host bits, so 2^${32 - p} = ${total} addresses. Subtract the network and broadcast addresses: ${total} - 2 = ${usable} usable hosts.`);
+      }
+      if (concept === 'calc_subnet_mask') {
+        const mk = (p) => [0, 1, 2, 3].map((i) => { const bits = Math.max(0, Math.min(8, p - i * 8)); return 256 - Math.pow(2, 8 - bits); }).join('.');
+        const p = cRand(17, 30);
+        const q = `Which dotted-decimal subnet mask corresponds to the CIDR prefix /${p}?`;
+        return calcFinish(concept, q, mk(p), [mk(p - 1), mk(p + 1), mk(p - 2), mk(p + 2), mk(p === 24 ? 25 : 24)],
+          `A /${p} sets the first ${p} bits to 1, which is ${mk(p)}.`);
+      }
+      if (concept === 'calc_raid') {
+        const level = cPick(['RAID 0', 'RAID 1', 'RAID 5', 'RAID 6', 'RAID 10']);
+        const s = cPick([1, 2, 4, 6, 8, 10, 12, 16]);
+        const n = level === 'RAID 1' ? 2 : level === 'RAID 5' ? cRand(3, 8) : level === 'RAID 6' ? cRand(4, 8) : level === 'RAID 10' ? cPick([4, 6, 8]) : cRand(2, 8);
+        const usable = { 'RAID 0': n * s, 'RAID 1': s, 'RAID 5': (n - 1) * s, 'RAID 6': (n - 2) * s, 'RAID 10': (n / 2) * s }[level];
+        const how = { 'RAID 0': 'striping with no redundancy, so every disk counts', 'RAID 1': 'a full mirror, so usable space equals one disk', 'RAID 5': 'one disk of parity, so (n - 1) disks of space', 'RAID 6': 'two disks of parity, so (n - 2) disks of space', 'RAID 10': 'mirrored pairs that are striped, so half the disks count' }[level];
+        const fmt = (x) => `${x} TB`;
+        const q = `A storage administrator builds a ${level} array from ${n} disks of ${s} TB each. How much usable capacity does the array provide?`;
+        return calcFinish(concept, q, fmt(usable), [fmt(n * s), fmt((n - 1) * s), fmt((n - 2) * s), fmt((n / 2) * s), fmt(s)].filter((w) => !w.startsWith('0 ') && !w.startsWith('-')),
+          `${level} is ${how}. With ${n} × ${s} TB disks that is ${fmt(usable)} usable.`);
+      }
+      return null;
+    }
+
+    function freshCalcSet() {
+      return CALC_KEYS.map((k) => makeCalcQuestion(k)).filter(Boolean);
+    }
+
+    // Used when a quiz needs more questions than the hand-written pool holds
+    function generateParameterizedQuestions(count, seedOffset = 1) {
+      const out = [];
+      for (let i = 0; i < count; i++) out.push(makeCalcQuestion(CALC_KEYS[(i + seedOffset) % CALC_KEYS.length]));
+      return out.filter(Boolean);
+    }
+
+    /* ---------- Variant choice, spaced repetition by concept ---------- */
+    function noteSeen(q) {
+      if (!appState.conceptSeen) appState.conceptSeen = {};
+      const cid = conceptOf(q);
+      const arr = appState.conceptSeen[cid] || (appState.conceptSeen[cid] = []);
+      const i = arr.indexOf(q.id);
+      if (i >= 0) arr.splice(i, 1);
+      arr.push(q.id);
+      while (arr.length > 4) arr.shift();
+    }
+
+    // Prefer a variant you have not seen recently; if all were seen, take the one seen longest ago
+    function pickByRecency(list) {
+      if (list.length === 1) return list[0];
+      const seen = (appState.conceptSeen && appState.conceptSeen[conceptOf(list[0])]) || [];
+      const unseen = list.filter((q) => !seen.includes(q.id));
+      if (unseen.length) return unseen[Math.floor(Math.random() * unseen.length)];
+      return list.slice().sort((a, b) => seen.indexOf(a.id) - seen.indexOf(b.id))[0];
+    }
+
+    function collapseVariants(list) {
+      const groups = new Map();
+      for (const q of list) {
+        const c = conceptOf(q);
+        if (!groups.has(c)) groups.set(c, []);
+        groups.get(c).push(q);
+      }
+      return [...groups.values()].map((g) => pickByRecency(g));
+    }
+
+    // One question per concept, in the given (seeded) order, so an exam never repeats an idea
+    function dedupeByConcept(list) {
+      const seen = new Set();
+      return list.filter((q) => { const c = conceptOf(q); if (seen.has(c)) return false; seen.add(c); return true; });
+    }
+
+    function missedKeyConcept(key) {
+      const k = String(key);
+      if (k.startsWith('concept:')) return k.slice(8);
+      const q = builtinLookup(k);
+      return q ? conceptOf(q) : 'c_' + k;
+    }
+
+    function buildMissedPool(fullBank) {
+      const out = [];
+      const used = new Set();
+      for (const key of appState.missedQuestionIds) {
+        let q = null;
+        if (String(key).startsWith('concept:')) {
+          q = makeCalcQuestion(String(key).slice(8));
+        } else {
+          const orig = fullBank.find((x) => x.id === key);
+          if (!orig) continue;
+          const sibs = fullBank.filter((x) => conceptOf(x) === conceptOf(orig) && x.id !== orig.id);
+          q = sibs.length ? pickByRecency(sibs) : orig;
+        }
+        if (q && !used.has(q.id)) { used.add(q.id); out.push(q); }
+      }
+      return out;
+    }
+
+    function missedPreviewItem(key) {
+      const k = String(key);
+      if (!k.startsWith('concept:')) return null;
+      const info = CALC_CONCEPTS[k.slice(8)];
+      return info ? { domain: info.domain, q: `Calculation practice: ${info.label} (new numbers next time)` } : null;
+    }
+
+    function recordMissState(stateObj, q, isCorrect) {
+      const cid = conceptOf(q);
+      const key = q.calc ? 'concept:' + q.concept : q.id;
+      const sameConcept = (id) => missedKeyConcept(id) === cid;
+      if (isCorrect) stateObj.missedQuestionIds = stateObj.missedQuestionIds.filter((id) => !sameConcept(id));
+      else if (!stateObj.missedQuestionIds.some(sameConcept)) stateObj.missedQuestionIds.push(key);
+    }
+
+    /* ---------- Stats by concept ---------- */
+    function recordConceptAttempt(stateObj, q, isCorrect) {
+      if (!stateObj.conceptStats) stateObj.conceptStats = {};
+      const cid = conceptOf(q);
+      const e = stateObj.conceptStats[cid] || (stateObj.conceptStats[cid] = { d: q.domain || 1, c: 0, t: 0 });
+      e.t += 1;
+      if (isCorrect) e.c += 1;
+    }
+
+    // Domain accuracy: attempts from before V9 count one by one; each concept since V9 counts once,
+    // at its own accuracy, so a harder variant of one idea does not become a separate topic.
+    function domStat(d) {
+      const raw = appState.domains[d];
+      let ct = 0; let cc = 0; let k = 0; let acc = 0;
+      for (const e of Object.values(appState.conceptStats || {})) {
+        if (e.d === d && e.t > 0) { ct += e.t; cc += e.c; k += 1; acc += e.c / e.t; }
+      }
+      const legT = Math.max(0, raw.total - ct);
+      const legC = Math.max(0, Math.min(raw.correct - cc, legT));
+      return { correct: legC + acc, total: legT + k, rawCorrect: raw.correct, rawTotal: raw.total };
+    }
+
+    /* ---------- My Notes: domains, then notebooks, one list at a time ---------- */
+    var notesNav = { openDomain: null, domain: null, notebook: null };
+
+    function notesMatchQuery(n, query) {
+      if (!query) return true;
+      return String(n.text || '').toLowerCase().includes(query) || String(n.takeaway || '').toLowerCase().includes(query);
+    }
+
+    function notesCrumbs(parts) {
+      return `<nav aria-label="Breadcrumb" id="notes-breadcrumb" class="flex flex-wrap items-center gap-1.5 text-xs">${parts.map((p, i) => {
+        const last = i === parts.length - 1;
+        const sep = i > 0 ? '<span class="text-slate-600">&rsaquo;</span>' : '';
+        return `${sep}${p.action && !last
+          ? `<button data-action="${p.action}" ${p.domain ? `data-domain="${p.domain}"` : ''} class="font-semibold text-indigo-300 hover:text-indigo-200 underline-offset-2 hover:underline">${escapeHTML(p.text)}</button>`
+          : `<span class="font-bold text-white">${escapeHTML(p.text)}</span>`}`;
+      }).join('')}</nav>`;
+    }
+
+    function renderNotesTab() {
+      const query = (document.getElementById('notes-search-input')?.value || '').trim().toLowerCase();
+      const container = document.getElementById('notes-domain-groups');
+
+      if (query) {
+        const hits = appState.notes.filter((n) => notesMatchQuery(n, query));
+        container.innerHTML = `
+          <div class="glass-card rounded-2xl p-4 sm:p-5 space-y-3">
+            ${notesCrumbs([{ text: 'Notes', action: 'notes-home' }, { text: `Search results (${hits.length})` }])}
+            ${hits.length ? hits.map(noteCardHTML).join('') : '<p class="text-xs text-slate-500">No notes match your search.</p>'}
+          </div>`;
+        return;
+      }
+
+      if (notesNav.domain && notesNav.notebook) {
+        const d = notesNav.domain;
+        const meta = DOMAIN_META[d];
+        const list = appState.notes.filter((n) => Number(n.domain) === d && noteNotebookOf(n) === notesNav.notebook);
+        container.innerHTML = `
+          <div class="glass-card rounded-2xl p-4 sm:p-5 space-y-3">
+            ${notesCrumbs([{ text: 'Notes', action: 'notes-home' }, { text: `Domain ${meta.code}`, action: 'notes-domain', domain: d }, { text: notesNav.notebook }])}
+            <div class="flex items-center justify-between gap-2">
+              <h3 class="text-sm font-bold text-white">${escapeHTML(notesNav.notebook)} <span class="text-slate-400 font-normal">&bull; ${meta.code} ${escapeHTML(meta.name)}</span></h3>
+              <button data-action="notes-domain" data-domain="${d}" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700">&larr; Back to Domain ${meta.code}</button>
+            </div>
+            ${list.length ? `<div class="space-y-2.5">${list.map(noteCardHTML).join('')}</div>` : '<p class="text-xs text-slate-500">No notes left in this notebook.</p>'}
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="space-y-3">
+          ${notesCrumbs([{ text: 'Notes' }])}
+          ${[1, 2, 3, 4, 5].map((d) => {
+            const meta = DOMAIN_META[d];
+            const dn = appState.notes.filter((n) => Number(n.domain) === d);
+            const open = notesNav.openDomain === d;
+            const books = NOTEBOOKS.map((nb) => ({ nb, count: dn.filter((n) => noteNotebookOf(n) === nb).length })).filter((b) => b.count > 0);
+            return `
+              <div class="glass-card rounded-2xl" data-domain-item="${d}">
+                <button data-action="notes-toggle-domain" data-domain="${d}" aria-expanded="${open}" class="w-full flex items-center justify-between gap-3 p-4 text-left">
+                  <span class="text-sm font-bold text-white">${meta.code} ${escapeHTML(meta.name)}</span>
+                  <span class="flex items-center gap-2 shrink-0">
+                    <span class="px-2.5 py-0.5 rounded-full text-xs bg-indigo-500/20 text-indigo-300">${dn.length} Notes</span>
+                    <span class="text-slate-400 text-xs">${open ? '&#9652;' : '&#9662;'}</span>
+                  </span>
+                </button>
+                ${open ? `
+                  <div class="px-4 pb-4 space-y-2" data-notebook-list="${d}">
+                    ${books.length === 0
+                      ? '<p class="text-xs text-slate-500">No notes in this domain yet. Highlight text in a quiz, flashcard, PBQ, exam or study guide section to save one.</p>'
+                      : books.map((b) => `
+                        <button data-action="notes-open-notebook" data-domain="${d}" data-notebook="${escapeHTML(b.nb)}" class="w-full flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-indigo-500/60 transition text-left">
+                          <span class="text-xs font-semibold text-indigo-200">&#128211; ${escapeHTML(b.nb)}</span>
+                          <span class="px-2 py-0.5 rounded-full text-[11px] bg-slate-800 text-slate-300">${b.count}</span>
+                        </button>`).join('')}
+                  </div>` : ''}
+              </div>`;
+          }).join('')}
+        </div>`;
+    }
+
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest && e.target.closest('[data-action]');
+      if (!btn) return;
+      const a = btn.dataset.action;
+      if (a === 'notes-home') { notesNav = { openDomain: null, domain: null, notebook: null }; renderNotesTab(); }
+      else if (a === 'notes-toggle-domain') {
+        const d = Number(btn.dataset.domain);
+        notesNav = { openDomain: notesNav.openDomain === d ? null : d, domain: null, notebook: null };
+        renderNotesTab();
+      } else if (a === 'notes-domain') {
+        notesNav = { openDomain: Number(btn.dataset.domain), domain: null, notebook: null };
+        const s = document.getElementById('notes-search-input'); if (s) s.value = '';
+        renderNotesTab();
+      } else if (a === 'notes-open-notebook') {
+        notesNav = { openDomain: Number(btn.dataset.domain), domain: Number(btn.dataset.domain), notebook: btn.dataset.notebook };
+        renderNotesTab();
+      }
+    });
+
+    /* =========================================================================
        17b. CLOUD SYNC (Firebase auth + Firestore, per-record last-write-wins)
        The firebase module script (end of file) exposes window.PrepSecFB.
        The app keeps working with no account and no connection.
@@ -4267,7 +4379,7 @@
       const add = (coll, id, data) => {
         out[`${coll}/${id}`] = { coll, id, str: JSON.stringify(data) };
       };
-      add('stats', 'main', { domains: state.domains, overall: state.overall, missed: state.missedQuestionIds || [] });
+      add('stats', 'main', { domains: state.domains, overall: state.overall, missed: state.missedQuestionIds || [], concepts: state.conceptStats || {} });
       if (state.profileName) add('profile', 'main', { name: state.profileName });
       for (const id of state.masteredFlashcards || []) add('fc', id, { v: true });
       for (const id of state.solvedPBQs || []) add('pbq', id, { v: true });
@@ -4378,6 +4490,7 @@
           appState.overall.correct = [1, 2, 3, 4, 5].reduce((a, dm) => a + appState.domains[dm].correct, 0);
           appState.overall.total = [1, 2, 3, 4, 5].reduce((a, dm) => a + appState.domains[dm].total, 0);
           appState.missedQuestionIds = Array.isArray(d.missed) ? d.missed.filter((x) => typeof x === 'string') : [];
+          if (d.concepts && typeof d.concepts === 'object') appState.conceptStats = d.concepts;
         } else if (coll === 'fc' || coll === 'pbq' || coll === 'guide') {
           const field = coll === 'fc' ? 'masteredFlashcards' : coll === 'pbq' ? 'solvedPBQs' : 'guideReviewed';
           const list = appState[field] || [];

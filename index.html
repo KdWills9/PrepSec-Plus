@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PrepSec+ V9 | CompTIA Security+ (SY0-701) Command Center</title>
+  <title>PrepSec+ V9.1 | CompTIA Security+ (SY0-701) Command Center</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -77,7 +77,7 @@
       box-shadow: 0 0 0 1px rgba(250, 204, 21, 0.45);
     }
   </style>
-  <style>.quiz-paused #quiz-question-stem, .quiz-paused #quiz-options-list, .quiz-paused #quiz-explanation-box, .quiz-paused #quiz-nav-row { display: none !important; } #highlight-popover { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); max-height: 92vh; overflow-y: auto; }</style>
+  <style>.quiz-paused #quiz-question-stem, .quiz-paused #quiz-options-list, .quiz-paused #quiz-explanation-box, .quiz-paused #quiz-nav-row { display: none !important; } #highlight-popover { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); box-sizing: border-box; max-height: 92vh; max-height: 92dvh; width: min(20rem, calc(100vw - 24px)); overflow-y: auto; -webkit-overflow-scrolling: touch; } #highlight-popover select, #highlight-popover textarea, #highlight-popover input { font-size: 16px; } #highlight-popover button { min-height: 40px; } #highlight-fab { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 18px); z-index: 65; padding: 12px 20px; border-radius: 9999px; background: #4f46e5; color: #fff; font-weight: 700; font-size: 14px; border: 1px solid rgba(165,180,252,.6); box-shadow: 0 8px 24px rgba(0,0,0,.45); -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: manipulation; } #highlight-fab.hidden { display: none; }</style>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f172a">
   <meta name="mobile-web-app-capable" content="yes">
@@ -98,7 +98,7 @@
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <h1 class="text-base sm:text-lg font-bold tracking-tight text-white">PrepSec+ V9</h1>
+            <h1 class="text-base sm:text-lg font-bold tracking-tight text-white">PrepSec+ V9.1</h1>
             <span class="px-2 py-0.5 text-[11px] font-semibold rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">SY0-701</span>
           </div>
           <p class="text-xs text-slate-400">CompTIA Security+ SY0-701 Study Hub</p>
@@ -135,6 +135,8 @@
 
   <!-- Toast Banner -->
   <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm pointer-events-none"></div>
+
+  <button id="highlight-fab" type="button" class="hidden" aria-label="Add selected text to notes">📝 Add note</button>
 
   <!-- Floating Text Selection Highlighter Toolbar -->
   <div id="highlight-popover" class="hidden fixed z-[70] glass-card rounded-2xl p-3 border border-indigo-500/50 shadow-2xl w-80 max-w-[92vw]">
@@ -922,18 +924,18 @@
         id: 'pbq1',
         title: 'PBQ #1: Firewall ACL Rule Ordering',
         domain: 4,
-        desc: 'Firewalls process rules top-to-bottom and stop at the first match. Reorder the 4 rules below so Admin SSH (10.10.5.4 -> 10.20.1.10:22) works, Guest Wi-Fi is blocked from Internal LAN, HTTPS web traffic is permitted, and an explicit catch-all DENY sits at the bottom.',
+        desc: 'Firewalls process rules top-to-bottom and stop at the first match. Reorder the 4 rules below so that all of these hold: HTTPS web traffic to the public web server is permitted, Guest Wi-Fi is blocked from the Internal LAN, Admin SSH (10.10.5.4 -> 10.20.1.10:22) works, and everything else is denied.',
         type: 'order',
         items: [
-          { id: 'r1', label: 'Rule A: PERMIT TCP 10.10.5.4/32 -> 10.20.1.10/32 Port 22 (Admin Jump SSH)' },
-          { id: 'r2', label: 'Rule B: DENY IP 192.168.50.0/24 -> 10.0.0.0/8 ANY (Block Guest Wi-Fi to Corp)' },
-          { id: 'r3', label: 'Rule C: PERMIT TCP ANY -> 10.20.1.50/32 Port 443 (Public Web HTTPS)' },
-          { id: 'r4', label: 'Rule D: DENY IP ANY -> ANY ANY (Explicit Catch-All Deny)' }
+          { id: 'r1', label: 'PERMIT TCP 10.10.5.4/32 -> 10.20.1.10/32 Port 22 (Admin Jump SSH)' },
+          { id: 'r2', label: 'DENY IP 192.168.50.0/24 -> 10.0.0.0/8 ANY (Block Guest Wi-Fi to Corp)' },
+          { id: 'r3', label: 'PERMIT TCP ANY -> 10.20.1.50/32 Port 443 (Public Web HTTPS)' },
+          { id: 'r4', label: 'DENY IP ANY -> ANY ANY (Explicit Catch-All Deny)' }
         ],
         correctOrder: ['r1', 'r2', 'r3', 'r4'],
-        // Graded on ordering constraints, not one exact sequence: A and B never overlap, so either may come first
+        // Graded on ordering constraints, not one exact sequence: the SSH permit and the Guest deny never overlap, so either may come first
         constraints: [['r2', 'r3'], ['r1', 'r4'], ['r2', 'r4'], ['r3', 'r4']],
-        rationale: 'The Guest Wi-Fi block (Rule B) must precede the broad HTTPS permit (Rule C), since Rule C would otherwise let guests reach 10.20.1.50. Every specific rule must precede the explicit catch-all DENY ANY at the bottom. Rules A and B do not overlap, so either order is valid.'
+        rationale: 'The Guest Wi-Fi DENY must precede the broad HTTPS PERMIT, since the permit would otherwise let guests reach 10.20.1.50. Every specific rule must precede the explicit catch-all DENY ANY at the bottom. The Admin SSH permit and the Guest Wi-Fi deny do not overlap, so either order is valid.'
       },
       {
         id: 'pbq2',
@@ -956,11 +958,11 @@
         desc: 'Sequence the forensic evidence sources from MOST volatile (collect first) to LEAST volatile (collect last).',
         type: 'order',
         items: [
-          { id: 'v1', label: '1. CPU Registers & L1/L2 Cache' },
-          { id: 'v2', label: '2. System RAM & Active Process Table' },
-          { id: 'v3', label: '3. Swap Space / Pagefile & Temporary Files' },
-          { id: 'v4', label: '4. Local SSD / Hard Drive Disk Image' },
-          { id: 'v5', label: '5. Remote Syslog & Archival Backup Tapes' }
+          { id: 'v1', label: 'CPU Registers & L1/L2 Cache' },
+          { id: 'v2', label: 'System RAM & Active Process Table' },
+          { id: 'v3', label: 'Swap Space / Pagefile & Temporary Files' },
+          { id: 'v4', label: 'Local SSD / Hard Drive Disk Image' },
+          { id: 'v5', label: 'Remote Syslog & Archival Backup Tapes' }
         ],
         correctOrder: ['v1', 'v2', 'v3', 'v4', 'v5'],
         rationale: 'RFC 3227 mandates capturing CPU cache and RAM before volatile memory is lost on reboot, followed by swap, local persistent disks, and archival media.'
@@ -2121,10 +2123,10 @@
       return !!(state && state.touched);
     }
 
-    function pbqSelectHTML(options, current, attrs, placeholder) {
+    function pbqSelectHTML(options, current, attrs, placeholder, order) {
       return `<select ${attrs} class="bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white w-full">
         <option value="">${escapeHTML(placeholder || '-- Select --')}</option>
-        ${options.map((opt) => `<option value="${escapeHTML(opt)}" ${current === opt ? 'selected' : ''}>${escapeHTML(opt)}</option>`).join('')}
+        ${(order || options).map((opt) => `<option value="${escapeHTML(opt)}" ${current === opt ? 'selected' : ''}>${escapeHTML(opt)}</option>`).join('')}
       </select>`;
     }
 
@@ -2156,7 +2158,7 @@
           ${lab.rows.map((r) => `
             <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-700 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
               <span class="text-xs sm:text-sm font-medium text-slate-200 ${lab.mono ? 'font-mono whitespace-pre-wrap break-all text-[11px] sm:text-xs' : ''}">${E(r.prompt)}</span>
-              <div class="lg:w-80 shrink-0">${pbqSelectHTML(r.options, sel[r.id], `data-action="pbq-matrix-select" data-ctx="${ctx}" data-row-id="${E(r.id)}"`, '-- Select --')}</div>
+              <div class="lg:w-80 shrink-0">${pbqSelectHTML(r.options, sel[r.id], `data-action="pbq-matrix-select" data-ctx="${ctx}" data-row-id="${E(r.id)}"`, '-- Select --', pbqOptOrder(state, 'm:' + r.id, r.options))}</div>
             </div>`).join('')}
         </div>`;
       }
@@ -2175,7 +2177,7 @@
               ${lab.rows.map((r) => `
                 <tr class="bg-slate-900">
                   <td class="px-3 py-2 rounded-l-xl border-y border-l border-slate-700 font-semibold text-slate-100 whitespace-pre-line align-middle">${E(r.label)}</td>
-                  ${lab.columns.map((c, ci) => `<td class="px-2 py-2 border-y border-slate-700 ${ci === lab.columns.length - 1 ? 'rounded-r-xl border-r' : ''}">${pbqSelectHTML(c.options, (sel[r.id] || {})[c.key], `data-action="pbq-table-select" data-ctx="${ctx}" data-row-id="${E(r.id)}" data-col-key="${E(c.key)}"`, '-- Select --').replace('w-full', 'w-full min-w-[8.5rem]')}</td>`).join('')}
+                  ${lab.columns.map((c, ci) => `<td class="px-2 py-2 border-y border-slate-700 ${ci === lab.columns.length - 1 ? 'rounded-r-xl border-r' : ''}">${pbqSelectHTML(c.options, (sel[r.id] || {})[c.key], `data-action="pbq-table-select" data-ctx="${ctx}" data-row-id="${E(r.id)}" data-col-key="${E(c.key)}"`, '-- Select --', pbqOptOrder(state, 't:' + c.key, c.options)).replace('w-full', 'w-full min-w-[8.5rem]')}</td>`).join('')}
                 </tr>`).join('')}
             </tbody>
           </table>
@@ -2230,7 +2232,7 @@
         const sel = state.sel || {};
         return `<div class="space-y-2 pt-1">
           <p class="text-xs sm:text-sm font-semibold text-indigo-200">${E(lab.prompt)}</p>
-          ${lab.options.map((o) => `
+          ${pbqOptOrder(state, 'list', lab.options.map((o) => o.id)).map((oid) => lab.options.find((o) => o.id === oid)).map((o) => `
             <label class="flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition ${sel[o.id] ? 'border-indigo-500 bg-indigo-600/15' : 'border-slate-700 bg-slate-900 hover:border-indigo-500/50'}">
               <input type="checkbox" data-action="pbq-check-toggle" data-ctx="${ctx}" data-opt-id="${E(o.id)}" class="mt-0.5 accent-indigo-500" ${sel[o.id] ? 'checked' : ''}>
               <span class="text-xs sm:text-sm text-slate-200">${E(o.label)}</span>
@@ -3486,6 +3488,7 @@
         a.click();
       } else if (action === 'close-highlight-popover') {
         document.getElementById('highlight-popover').classList.add('hidden');
+        fabSaved = null;
         window.getSelection().removeAllRanges();
         pendingHighlight = null;
         pendingHighlightCtx = null;
@@ -3588,18 +3591,8 @@
 
     // Context-Aware Text Selection Highlighter Popover
     document.addEventListener('mouseup', (e) => {
-      if (e.target.closest('#highlight-popover') || e.target.closest('input, textarea, select')) return;
-      const sel = window.getSelection();
-      const text = sel && !sel.isCollapsed ? sel.toString().trim() : '';
-      const popover = document.getElementById('highlight-popover');
-      if (text.length >= 8 && text.length <= 600) {
-        pendingHighlight = text;
-        pendingHighlightCtx = captureHighlightContext(sel.anchorNode);
-        document.getElementById('highlight-preview-text').textContent = text;
-        document.getElementById('highlight-domain-select').value = String(domainFromContext(pendingHighlightCtx) || detectContextDomain());
-        document.getElementById('highlight-notebook-select').value = notebookForHighlight(pendingHighlightCtx);
-        popover.classList.remove('hidden');
-      }
+      if (e.target.closest('#highlight-popover, #highlight-fab') || e.target.closest('input, textarea, select')) return;
+      openHighlightFromSelection();
     });
 
     // Keyboard shortcuts (Quiz 1-4/Enter & Flashcards Space/Arrows)
@@ -3637,7 +3630,7 @@
     var demoStash = null;
     var demoLevel = null;
     var demoQueue = [];
-    const APP_VERSION = 'V9';
+    const APP_VERSION = 'V9.1';
 
     function pad2(n) { return String(n).padStart(2, '0'); }
     function clockText(sec) {
@@ -4356,6 +4349,95 @@
         renderNotesTab();
       }
     });
+
+    /* =========================================================================
+       V9.1: PHONE HIGHLIGHTER + PBQ OPTION SHUFFLE
+       ========================================================================= */
+    // Touch screens never fire mouseup after a text selection, so the V9 popup never opened on phones.
+    // Fix: watch selectionchange (fires everywhere), show a floating "Add note" button, and open the same popup from it.
+    var fabSaved = null;
+    var fabTimer = null;
+
+    function selectionInfo() {
+      const sel = window.getSelection();
+      if (!sel || sel.isCollapsed || !sel.rangeCount) return null;
+      const text = sel.toString().trim();
+      if (text.length < 8 || text.length > 600) return null;
+      const node = sel.anchorNode;
+      const el = node && (node.nodeType === 1 ? node : node.parentElement);
+      if (el && el.closest && el.closest('#highlight-popover, #highlight-fab, input, textarea, select')) return null;
+      return { text, ctx: captureHighlightContext(sel.anchorNode) };
+    }
+
+    function hideHighlightFab() {
+      const fab = document.getElementById('highlight-fab');
+      if (fab) fab.classList.add('hidden');
+    }
+
+    function fitHighlightPopover() {
+      const pop = document.getElementById('highlight-popover');
+      if (!pop || pop.classList.contains('hidden')) return;
+      const vv = window.visualViewport;
+      if (vv) {
+        pop.style.top = `${vv.offsetTop + vv.height / 2}px`;
+        pop.style.maxHeight = `${Math.max(180, vv.height - 16)}px`;
+      }
+    }
+
+    function openHighlightPopover(info) {
+      if (!info) return;
+      const popover = document.getElementById('highlight-popover');
+      pendingHighlight = info.text;
+      pendingHighlightCtx = info.ctx;
+      document.getElementById('highlight-preview-text').textContent = info.text;
+      document.getElementById('highlight-domain-select').value = String(domainFromContext(pendingHighlightCtx) || detectContextDomain());
+      document.getElementById('highlight-notebook-select').value = notebookForHighlight(pendingHighlightCtx);
+      popover.classList.remove('hidden');
+      hideHighlightFab();
+      fitHighlightPopover();
+    }
+
+    function openHighlightFromSelection() {
+      openHighlightPopover(selectionInfo());
+    }
+
+    document.addEventListener('selectionchange', () => {
+      clearTimeout(fabTimer);
+      fabTimer = setTimeout(() => {
+        const pop = document.getElementById('highlight-popover');
+        const fab = document.getElementById('highlight-fab');
+        if (!fab) return;
+        if (pop && !pop.classList.contains('hidden')) { hideHighlightFab(); return; }
+        const info = selectionInfo();
+        if (info) { fabSaved = info; fab.classList.remove('hidden'); }
+        else hideHighlightFab();
+      }, 350);
+    });
+
+    (function wireHighlightFab() {
+      const fab = document.getElementById('highlight-fab');
+      if (!fab) return;
+      // keep the text selected while the button is pressed
+      ['pointerdown', 'mousedown'].forEach((ev) => fab.addEventListener(ev, (e) => e.preventDefault()));
+      fab.addEventListener('click', (e) => {
+        e.preventDefault();
+        openHighlightPopover(selectionInfo() || fabSaved);
+      });
+    })();
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', fitHighlightPopover);
+      window.visualViewport.addEventListener('scroll', fitHighlightPopover);
+    }
+
+    // PBQ dropdowns and checklists: the correct answer was the first option in about 3 of 4 rows. Shuffle per attempt.
+    function pbqOptOrder(state, key, options) {
+      state.optOrder = state.optOrder || {};
+      const cur = state.optOrder[key];
+      const same = Array.isArray(cur) && cur.length === options.length && options.every((o) => cur.includes(o));
+      if (!same) state.optOrder[key] = pbqShuffle(options);
+      return state.optOrder[key];
+    }
 
     /* =========================================================================
        17b. CLOUD SYNC (Firebase auth + Firestore, per-record last-write-wins)

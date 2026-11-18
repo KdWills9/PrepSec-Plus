@@ -1,5 +1,5 @@
 // Bump this number every time you upload a new index.html so devices refresh.
-const V = 'prepsec-v113-1';
+const V = 'prepsec-v114-1';
 const LOCAL = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 const REMOTE = [
   'https://cdn.tailwindcss.com',

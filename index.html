@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PrepSec+ V11.1 | CompTIA Security+ (SY0-701) Command Center</title>
+  <title>PrepSec+ V11.2 | CompTIA Security+ (SY0-701) Command Center</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -98,7 +98,7 @@
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <h1 class="text-base sm:text-lg font-bold tracking-tight text-white">PrepSec+ V11.1</h1>
+            <h1 class="text-base sm:text-lg font-bold tracking-tight text-white">PrepSec+ V11.2</h1>
             <span class="px-2 py-0.5 text-[11px] font-semibold rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">SY0-701</span>
           </div>
           <p class="text-xs text-slate-400">CompTIA Security+ SY0-701 Study Hub</p>
@@ -287,6 +287,8 @@
       </div>
 
       <!-- Weighted Domain Proficiency + Missed Queue & Exam History -->
+      <div id="study-plan-card" class="glass-card rounded-2xl p-5"></div>
+
       <div class="glass-card rounded-2xl p-5">
         <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
           <div>
@@ -1105,6 +1107,8 @@
         notes: [],
         examHistory: [],
         attempts: [], // V11.1: saved quiz and exam attempts (last 50)
+        examDate: '', // V11.2: planned exam date (YYYY-MM-DD)
+        dailyGoal: 30, // V11.2: questions per day
         profileName: '',
         conceptStats: {}, // { conceptId: { d: domain, c: correct, t: total } } since V9
         conceptSeen: {}, // { conceptId: [recently shown variant ids] } (this device only)
@@ -1507,12 +1511,14 @@
       }
       const shuffledOpts = indices.map((origIdx) => questionObj.opts[origIdx]);
       const newAns = indices.indexOf(questionObj.ans);
-      return {
+      const out = {
         ...questionObj,
         opts: shuffledOpts,
         ans: newAns,
         userChoice: null
       };
+      if (Array.isArray(questionObj.wx) && questionObj.wx.length === questionObj.opts.length) out.wx = indices.map((origIdx) => questionObj.wx[origIdx]);
+      return out;
     }
 
     function getCombinedQuestionBank() {
@@ -1576,6 +1582,7 @@
     }
 
     function renderDashboard() {
+      try { renderStudyPlan(); } catch (e) { /* plan is best-effort */ }
       try { renderObjectiveHeatmap(); } catch (e) { /* heatmap is best-effort */ }
       const bank = getCombinedQuestionBank();
       const domCorrect = [1, 2, 3, 4, 5].reduce((acc, d) => acc + appState.domains[d].correct, 0);
@@ -1788,8 +1795,7 @@
           <div class="font-bold mb-1 ${isRight ? 'text-emerald-400' : 'text-rose-400'}">
             ${isRight ? '✓ Correct!' : `✕ Incorrect — Correct Answer: ${letters[q.ans]}`}
           </div>
-          <p>${escapeHTML(q.exp)}</p>
-          ${objForItem(q, 'question') ? `<button data-action="open-guide" data-obj="${escapeHTML(objForItem(q, 'question'))}" class="mt-2.5 px-3 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/40 border border-indigo-500/40 text-xs font-semibold text-indigo-200">Study guide: Obj ${escapeHTML(objForItem(q, 'question'))} ↗</button>` : ''}
+          ${explanationHTML(q, q.userChoice)}
         `;
       } else {
         expBox.classList.add('hidden');
@@ -1948,11 +1954,8 @@
                 `;
               }).join('')}
             </div>
-            <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800 text-xs text-slate-300">
-              <strong class="text-indigo-300">Rationale:</strong> ${escapeHTML(q.exp)}
-            </div>
+            <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800">${explanationHTML(q, q.userChoice)}</div>
             <button data-action="report-question" data-qid="${escapeHTML(q.id)}" class="mt-3 mr-2 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-300">Report this question</button>
-            ${qObj ? `<button data-action="open-guide" data-obj="${escapeHTML(qObj)}" class="mt-3 px-3 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/40 border border-indigo-500/40 text-xs font-semibold text-indigo-200">Study guide: Obj ${escapeHTML(qObj)} ↗</button>` : ''}
           </div>
         `;
       }).join('');
@@ -3433,6 +3436,16 @@
         historyRetake(btn.dataset.id, false);
       } else if (action === 'history-retake-missed') {
         historyRetake(btn.dataset.id, true);
+      } else if (action === 'plan-save') {
+        savePlan();
+      } else if (action === 'plan-clear') {
+        appState.examDate = '';
+        saveAppState(appState);
+        renderStudyPlan();
+      } else if (action === 'plan-missed') {
+        switchTab('quiz');
+        document.getElementById('quiz-count-select').value = '10';
+        startPracticeQuiz('missed');
       } else if (action === 'heat-practice') {
         switchTab('quiz');
         document.getElementById('quiz-count-select').value = '10';
@@ -3980,7 +3993,7 @@
         if (perm.some((i) => i < 0) || new Set(perm).size !== perm.length) perm = null;
       }
       if (perm) item.p = perm;
-      else item.s = { id: q.id, domain: q.domain, concept: q.concept, obj: q.obj, q: q.q, opts: q.opts, ans: q.ans, exp: q.exp };
+      else item.s = { id: q.id, domain: q.domain, concept: q.concept, obj: q.obj, q: q.q, opts: q.opts, ans: q.ans, exp: q.exp, wx: q.wx };
       return item;
     }
 
@@ -3996,7 +4009,7 @@
       for (const it of att.items || []) {
         const base = bankById(it.id);
         let q = null;
-        if (it.p && base) q = { ...base, opts: it.p.map((i) => base.opts[i]), ans: it.p.indexOf(base.ans) };
+        if (it.p && base) { q = { ...base, opts: it.p.map((i) => base.opts[i]), ans: it.p.indexOf(base.ans) }; if (Array.isArray(base.wx) && base.wx.length === base.opts.length) q.wx = it.p.map((i) => base.wx[i]); }
         else if (it.s) q = { ...it.s };
         if (!q) continue;
         q.userChoice = it.u >= 0 ? it.u : null;
@@ -4151,13 +4164,154 @@
     }
 
     /* =========================================================================
+       V11.2: EXAM COUNTDOWN + DAILY STUDY PLAN, STRUCTURED EXPLANATIONS
+       ========================================================================= */
+    function objectiveAgg() {
+      const conceptObj = {};
+      for (const q of BUILTIN_QUESTIONS) if (q.concept && q.obj) conceptObj[q.concept] = q.obj;
+      if (typeof CALC_CONCEPTS !== 'undefined') for (const [k, v] of Object.entries(CALC_CONCEPTS)) conceptObj[k] = v.obj;
+      const agg = {};
+      for (const [cid, st] of Object.entries(appState.conceptStats || {})) {
+        const obj = conceptObj[cid];
+        if (!obj) continue;
+        agg[obj] = agg[obj] || { c: 0, t: 0 };
+        agg[obj].c += Number(st.c) || 0;
+        agg[obj].t += Number(st.t) || 0;
+      }
+      return agg;
+    }
+
+    function localDateKey(d) {
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    function daysUntil(dateStr) {
+      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dateStr || ''));
+      if (!m) return null;
+      const target = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      return Math.round((target - today) / 86400000);
+    }
+
+    function answeredToday() {
+      const key = localDateKey(new Date());
+      let n = 0;
+      for (const a of appState.attempts || []) {
+        if (a && localDateKey(new Date(a.ts)) === key) n += (a.items || []).filter((it) => it.u >= 0).length;
+      }
+      return n;
+    }
+
+    function renderStudyPlan() {
+      const el = document.getElementById('study-plan-card');
+      if (!el) return;
+      const goal = [10, 20, 30, 50, 75].includes(Number(appState.dailyGoal)) ? Number(appState.dailyGoal) : 30;
+      const left = daysUntil(appState.examDate);
+      const done = answeredToday();
+      const pctDone = Math.min(100, Math.round((done / goal) * 100));
+
+      let headline;
+      let phase = '';
+      if (left === null) {
+        headline = '<div class="text-sm text-slate-300">Set your exam date to get a countdown and a daily plan.</div>';
+      } else if (left < 0) {
+        headline = '<div class="text-sm text-amber-300 font-semibold">Your exam date has passed. Set a new date to continue the plan.</div>';
+      } else if (left === 0) {
+        headline = '<div class="text-2xl font-extrabold text-emerald-300">Exam day</div>';
+        phase = 'Light review only. Rest, arrive early and read each question twice.';
+      } else {
+        headline = `<div><span class="text-3xl font-extrabold text-white">${left}</span> <span class="text-sm text-slate-400">day${left === 1 ? '' : 's'} until your exam</span></div>`;
+        phase = left > 30 ? 'Build phase: cover every objective at least once.'
+          : left > 14 ? 'Practice phase: spend most of your time on weak objectives.'
+          : left > 6 ? 'Review phase: clear missed questions and take full exams.'
+          : 'Final week: one full exam early in the week, then light review and rest.';
+      }
+
+      // focus objectives: weakest first (3+ tries), then objectives with no data
+      const agg = objectiveAgg();
+      const guideObjs = STUDY_GUIDE.filter((g) => /^\d\.\d+$/.test(g.id));
+      const weak = guideObjs
+        .map((g) => ({ g, a: agg[g.id] }))
+        .filter((x) => x.a && x.a.t >= 3 && x.a.c / x.a.t < 0.8)
+        .sort((x, y) => x.a.c / x.a.t - y.a.c / y.a.t)
+        .slice(0, 2);
+      const fresh = guideObjs.filter((g) => !agg[g.id] || agg[g.id].t === 0).slice(0, Math.max(0, 3 - weak.length));
+      const tasks = [];
+      for (const x of weak) tasks.push({ label: `Practice objective ${x.g.id}: ${x.g.title}`, note: `${Math.round((x.a.c / x.a.t) * 100)}% over ${x.a.t} answers`, action: `data-action="heat-practice" data-obj="${x.g.id}"`, cta: '10 questions' });
+      for (const g of fresh) tasks.push({ label: `Start objective ${g.id}: ${g.title}`, note: 'no answers yet', action: `data-action="heat-practice" data-obj="${g.id}"`, cta: '10 questions' });
+      const missedN = (appState.missedQuestionIds || []).length;
+      if (missedN > 0) tasks.push({ label: 'Clear your missed-question queue', note: `${missedN} queued`, action: 'data-action="plan-missed"', cta: 'Review missed' });
+      const exams = (appState.examHistory || []);
+      if (left !== null && left >= 0 && left <= 30) {
+        const lastSc = exams.length ? exams[exams.length - 1] : null;
+        tasks.push({ label: exams.length === 0 ? 'Take your first full timed exam' : 'Take another full timed exam', note: exams.length ? `${exams.length} taken, latest ${lastSc.scaled || lastSc.score || '?'} / 900` : 'no full exams yet', action: 'data-action="nav" data-tab="exams"', cta: 'Open exams' });
+      }
+
+      el.innerHTML = `
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div class="space-y-1">
+            <h2 class="text-base font-bold text-white">Study Plan</h2>
+            ${headline}
+            ${phase ? `<p class="text-xs text-indigo-300">${escapeHTML(phase)}</p>` : ''}
+          </div>
+          <div class="flex flex-wrap items-end gap-2">
+            <label class="text-[11px] text-slate-400">Exam date<br><input id="plan-date" type="date" value="${escapeHTML(appState.examDate || '')}" class="mt-1 bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white" /></label>
+            <label class="text-[11px] text-slate-400">Daily goal<br><select id="plan-goal" class="mt-1 bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white">${[10, 20, 30, 50, 75].map((n) => `<option value="${n}" ${n === goal ? 'selected' : ''}>${n} questions</option>`).join('')}</select></label>
+            <button data-action="plan-save" class="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white">Save</button>
+            ${appState.examDate ? '<button data-action="plan-clear" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700">Clear date</button>' : ''}
+          </div>
+        </div>
+        <div class="mt-4">
+          <div class="flex items-center justify-between text-xs text-slate-400 mb-1"><span>Today: ${done} of ${goal} questions</span><span>${pctDone}%</span></div>
+          <div class="h-2 rounded-full bg-slate-800 overflow-hidden"><div class="h-full ${pctDone >= 100 ? 'bg-emerald-500' : 'bg-indigo-500'}" style="width:${pctDone}%"></div></div>
+          <p class="text-[11px] text-slate-500 mt-1">Counts questions answered in quizzes and exams saved to History today.</p>
+        </div>
+        <div class="mt-4 space-y-2" id="plan-tasks">
+          ${tasks.length === 0 ? '<div class="text-xs text-slate-400">Answer a few questions and your recommended tasks will appear here.</div>' : tasks.map((t) => `
+            <div class="plan-task flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-xl bg-slate-900/80 border border-slate-800">
+              <div class="text-xs"><span class="text-slate-200 font-semibold">${escapeHTML(t.label)}</span> <span class="text-slate-500">&bull; ${escapeHTML(t.note)}</span></div>
+              <button ${t.action} class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-indigo-200 border border-slate-700">${escapeHTML(t.cta)}</button>
+            </div>`).join('')}
+        </div>`;
+    }
+
+    function savePlan() {
+      const d = document.getElementById('plan-date').value;
+      const g = Number(document.getElementById('plan-goal').value);
+      if (d) {
+        const left = daysUntil(d);
+        if (left === null || left < 0) { showToast('Choose today or a future date for your exam.', 'warn'); return; }
+      }
+      appState.examDate = d || '';
+      appState.dailyGoal = [10, 20, 30, 50, 75].includes(g) ? g : 30;
+      saveAppState(appState);
+      renderStudyPlan();
+      showToast('Study plan saved.', 'success');
+    }
+
+    function explanationHTML(q, chosen) {
+      const L = ['A', 'B', 'C', 'D'];
+      const obj = objForItem(q, 'question');
+      let wrong = '';
+      if (Array.isArray(q.wx) && q.wx.length === q.opts.length) {
+        wrong = `<div class="mt-3"><div class="text-xs font-bold text-rose-300 mb-1">Why the other options are wrong</div><ul class="space-y-1.5">${q.opts.map((o, i) => i === q.ans || !q.wx[i] ? '' : `<li class="text-xs text-slate-300"><span class="font-mono font-bold text-slate-400">${L[i]}.</span> <span class="text-slate-400">${escapeHTML(o)}</span> &mdash; ${escapeHTML(q.wx[i])}${i === chosen ? ' <span class="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold">your answer</span>' : ''}</li>`).join('')}</ul></div>`;
+      }
+      return `
+        <div class="text-xs font-bold text-emerald-300 mb-1">Why ${L[q.ans]} is correct</div>
+        <p class="text-xs text-slate-300">${escapeHTML(q.exp)}</p>
+        ${wrong}
+        ${obj ? `<button data-action="open-guide" data-obj="${escapeHTML(obj)}" class="mt-3 px-3 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/40 border border-indigo-500/40 text-xs font-semibold text-indigo-200">Study guide: Obj ${escapeHTML(obj)} ↗</button>` : ''}`;
+    }
+
+    /* =========================================================================
        17a. V8: TIMERS, NOTEBOOKS, SETTINGS, BUG REPORTS, ADMIN + DEMO MODE
        ========================================================================= */
     var demoMode = false;   // var on purpose: saveAppState checks it during boot
     var demoStash = null;
     var demoLevel = null;
     var demoQueue = [];
-    const APP_VERSION = 'V11.1';
+    const APP_VERSION = 'V11.2';
 
     function pad2(n) { return String(n).padStart(2, '0'); }
     function clockText(sec) {
@@ -4991,7 +5145,7 @@
         out[`${coll}/${id}`] = { coll, id, str: JSON.stringify(data) };
       };
       add('stats', 'main', { domains: state.domains, overall: state.overall, missed: state.missedQuestionIds || [], concepts: state.conceptStats || {} });
-      if (state.profileName) add('profile', 'main', { name: state.profileName });
+      if (state.profileName || state.examDate) add('profile', 'main', { name: state.profileName || '', examDate: state.examDate || '', goal: Number(state.dailyGoal) || 30 });
       for (const id of state.masteredFlashcards || []) add('fc', id, { v: true });
       for (const id of state.solvedPBQs || []) add('pbq', id, { v: true });
       for (const id of state.guideReviewed || []) add('guide', id, { v: true });
@@ -5121,6 +5275,8 @@
           }
         } else if (coll === 'profile') {
           if (typeof d.name === 'string' && d.name.trim()) appState.profileName = d.name.trim().slice(0, 40);
+          if (typeof d.examDate === 'string' && (d.examDate === '' || /^\d{4}-\d{2}-\d{2}$/.test(d.examDate))) appState.examDate = d.examDate;
+          if ([10, 20, 30, 50, 75].includes(Number(d.goal))) appState.dailyGoal = Number(d.goal);
         } else if (coll === 'exam' && d.attempt) {
           const at = d.attempt;
           if (at && at.id && Array.isArray(at.items)) {

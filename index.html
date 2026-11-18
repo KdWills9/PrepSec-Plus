@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PrepSec+ V10.3 | CompTIA Security+ (SY0-701) Command Center</title>
+  <title>PrepSec+ V11.1 | CompTIA Security+ (SY0-701) Command Center</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -98,7 +98,7 @@
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <h1 class="text-base sm:text-lg font-bold tracking-tight text-white">PrepSec+ V10.3</h1>
+            <h1 class="text-base sm:text-lg font-bold tracking-tight text-white">PrepSec+ V11.1</h1>
             <span class="px-2 py-0.5 text-[11px] font-semibold rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">SY0-701</span>
           </div>
           <p class="text-xs text-slate-400">CompTIA Security+ SY0-701 Study Hub</p>
@@ -116,6 +116,7 @@
         <button data-action="nav" data-tab="dashboard" class="nav-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition">Dashboard</button>
         <button data-action="nav" data-tab="quiz" class="nav-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition">Practice Quiz</button>
         <button data-action="nav" data-tab="exams" class="nav-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition">Full Exams (10)</button>
+        <button data-action="nav" data-tab="history" class="nav-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition">History</button>
         <button data-action="nav" data-tab="pbq" class="nav-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition">PBQ Labs (27)</button>
         <button data-action="nav" data-tab="flashcards" class="nav-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition">Flashcards (212)</button>
         <button data-action="nav" data-tab="notes" class="nav-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center gap-1.5">
@@ -169,6 +170,25 @@
     <button data-action="confirm-save-highlight" class="w-full py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition">
       Save Highlight
     </button>
+  </div>
+
+  <!-- V11.1: Report this question -->
+  <div id="qreport-modal" class="hidden fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="glass-card rounded-2xl p-5 sm:p-6 w-full max-w-md space-y-3">
+      <h3 class="text-base font-bold text-white">Report this question</h3>
+      <p id="qreport-stem" class="text-xs text-slate-400 line-clamp-3"></p>
+      <select id="qreport-kind" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+        <option value="Wrong answer key">Wrong answer key</option>
+        <option value="Unclear or ambiguous wording">Unclear or ambiguous wording</option>
+        <option value="Other problem">Other problem</option>
+      </select>
+      <textarea id="qreport-detail" rows="3" maxlength="1200" placeholder="Optional: what is wrong, and what do you think the answer should be?" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"></textarea>
+      <p class="text-[11px] text-slate-500">Reports are saved to the cloud for review. You need to be signed in.</p>
+      <div class="flex justify-end gap-2">
+        <button data-action="qreport-cancel" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700">Cancel</button>
+        <button data-action="qreport-send" id="qreport-send" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white">Send report</button>
+      </div>
+    </div>
   </div>
 
   <!-- Exam Submit Confirmation Modal -->
@@ -267,6 +287,17 @@
       </div>
 
       <!-- Weighted Domain Proficiency + Missed Queue & Exam History -->
+      <div class="glass-card rounded-2xl p-5">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <div>
+            <h2 class="text-base font-bold text-white">Objective Heatmap</h2>
+            <p class="text-xs text-slate-400">Accuracy for each SY0-701 objective, from your answers since concept tracking began. Select an objective to practice it.</p>
+          </div>
+          <span class="text-[11px] text-slate-500">grey: no data &bull; red &lt;50% &bull; amber 50-64% &bull; lime 65-79% &bull; green 80%+</span>
+        </div>
+        <div id="objective-heatmap" class="space-y-2.5"></div>
+      </div>
+
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Left 2 Columns: Domain Breakdown -->
         <div class="lg:col-span-2 glass-card rounded-2xl p-5">
@@ -345,7 +376,8 @@
             <label class="block text-xs font-semibold text-slate-300 mb-1.5">Feedback Mode</label>
             <select id="quiz-mode-select" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:border-indigo-500">
               <option value="instant" selected>Instant Study (Immediate Rationale)</option>
-              <option value="exam">Exam Sim (Grade at End)</option>
+              <option value="exam">No-Feedback Practice (Grade at End)</option>
+              <option value="blind">No-Feedback + Blind Review of Flagged</option>
             </select>
           </div>
 
@@ -372,11 +404,14 @@
           </div>
           <div class="flex items-center gap-3">
             <span id="quiz-timer-display" class="hidden font-mono text-xs px-2.5 py-1 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/30">01:30</span>
+            <button data-action="quiz-toggle-flag" id="btn-quiz-flag" class="hidden px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-amber-300 border border-slate-700">⚑ Flag</button>
+            <button data-action="report-question" data-from="quiz" class="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 border border-slate-700">Report</button>
             <button data-action="quiz-toggle-pause" id="btn-quiz-pause" class="hidden px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700">Pause</button>
             <button data-action="quit-quiz" class="text-xs text-slate-400 hover:text-rose-300 transition">End Quiz</button>
           </div>
         </div>
 
+        <div id="quiz-phase-note" class="hidden rounded-xl p-3 bg-amber-500/10 border border-amber-500/30 text-xs text-amber-200"></div>
         <div id="quiz-question-stem" class="text-base sm:text-lg font-semibold text-white leading-relaxed"></div>
 
         <div id="quiz-options-list" class="space-y-2.5"></div>
@@ -394,6 +429,8 @@
           </button>
         </div>
       </div>
+
+      <div id="quiz-review-panel" class="hidden glass-card rounded-2xl p-5 sm:p-6 space-y-4"></div>
 
       <!-- Post-Quiz Results & Itemized Review -->
       <div id="quiz-results-panel" class="hidden space-y-5"></div>
@@ -420,8 +457,9 @@
           </div>
           <div class="flex items-center gap-2.5">
             <div id="exam-clock" class="font-mono text-sm font-bold px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-emerald-400">90:00</div>
+            <button data-action="report-question" data-from="exam" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 border border-slate-700">Report</button>
             <button data-action="exam-toggle-flag" id="btn-exam-flag" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-amber-300 border border-slate-700">⚑ Flag</button>
-            <button data-action="exam-submit-confirm" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white">Submit Exam</button>
+            <button data-action="exam-open-review" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white">Review &amp; Submit</button>
           </div>
         </div>
 
@@ -431,7 +469,7 @@
             <div id="exam-item-body"></div>
             <div class="flex items-center justify-between pt-4 border-t border-slate-800">
               <button data-action="exam-prev" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200">← Previous</button>
-              <button data-action="exam-next" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white">Next Item →</button>
+              <button data-action="exam-next" id="btn-exam-next" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white">Next Item →</button>
             </div>
           </div>
 
@@ -454,7 +492,21 @@
       </div>
 
       <!-- Full Exam Results & Itemized Review -->
+      <div id="exam-review-panel" class="hidden glass-card rounded-2xl p-5 sm:p-6 space-y-4"></div>
       <div id="exam-results-panel" class="hidden space-y-5"></div>
+    </section>
+
+    <!-- ==================== V11.1: QUIZ HISTORY ==================== -->
+    <section id="tab-history" class="tab-panel hidden space-y-5">
+      <div class="glass-card rounded-2xl p-5 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 class="text-lg font-bold text-white">Quiz &amp; Exam History</h2>
+          <p class="text-xs sm:text-sm text-slate-400 mt-1">Your last 50 completed practice quizzes and full exams. Open one to review every question, retake the same set, or retake only what you missed. Signed in, it syncs across your devices.</p>
+        </div>
+        <span id="history-count" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800 text-indigo-300 border border-slate-700">0 of 50 saved</span>
+      </div>
+      <div id="history-list" class="space-y-3"></div>
+      <div id="history-detail" class="hidden space-y-5"></div>
     </section>
 
     <!-- ==================== TAB 4: PBQ LABS ==================== -->
@@ -1052,6 +1104,7 @@
         missedQuestionIds: [],
         notes: [],
         examHistory: [],
+        attempts: [], // V11.1: saved quiz and exam attempts (last 50)
         profileName: '',
         conceptStats: {}, // { conceptId: { d: domain, c: correct, t: total } } since V9
         conceptSeen: {}, // { conceptId: [recently shown variant ids] } (this device only)
@@ -1523,6 +1576,7 @@
     }
 
     function renderDashboard() {
+      try { renderObjectiveHeatmap(); } catch (e) { /* heatmap is best-effort */ }
       const bank = getCombinedQuestionBank();
       const domCorrect = [1, 2, 3, 4, 5].reduce((acc, d) => acc + appState.domains[d].correct, 0);
       const domTotal = [1, 2, 3, 4, 5].reduce((acc, d) => acc + appState.domains[d].total, 0);
@@ -1639,6 +1693,9 @@
       } else if (domainVal === 'weakest') {
         const weakId = getWeakestDomainId();
         pool = bank.filter((q) => q.domain === weakId);
+      } else if (String(domainVal).startsWith('obj:')) {
+        const code = String(domainVal).slice(4);
+        pool = bank.filter((q) => q.obj === code);
       } else if (domainVal === 'all') {
         pool = weightedPoolForAll(bank);
       } else {
@@ -1655,7 +1712,7 @@
       }
 
       // Top up with parameterized variants if requested count exceeds static pool
-      if (pool.length < count) {
+      if (pool.length < count && !String(domainVal).startsWith('obj:')) {
         const needed = count - pool.length;
         const variants = generateParameterizedQuestions(needed * 3 + 6, Date.now() % 100);
         const filteredVariants = (domainVal !== 'all' && domainVal !== 'missed' && domainVal !== 'weakest')
@@ -1667,30 +1724,16 @@
       }
 
       const selected = pool.slice(0, count).map(fisherYatesShuffleQuestion);
-      selected.forEach(noteSeen);
-
-      quizSession = {
-        questions: selected,
-        index: 0,
-        mode,
-        timed,
-        totalSeconds: timed ? 90 * selected.length : 0,
-        endAt: 0,
-        remaining: 0,
-        paused: false
-      };
-
-      document.getElementById('quiz-setup-panel').classList.add('hidden');
-      document.getElementById('quiz-results-panel').classList.add('hidden');
-      document.getElementById('quiz-runner-panel').classList.remove('hidden');
-
-      renderQuizQuestion();
-      startQuizTimerIfNeeded();
+      if (selected.length === 0) { showToast('No questions are available for that selection.', 'warn'); return; }
+      const domOpt = document.querySelector(`#quiz-domain-filter option[value="${domainVal}"]`);
+      const title = String(domainVal).startsWith('obj:') ? `Objective ${String(domainVal).slice(4)}` : `Practice: ${domOpt ? domOpt.textContent.trim() : domainVal}`;
+      beginQuiz(selected, mode, timed, title);
     }
 
     function selectQuizOption(optIdx) {
       if (!quizSession) return;
-      const q = quizSession.questions[quizSession.index];
+      const q = quizCur();
+      if (!q || quizSession.phase === 'review') return;
       if (quizSession.paused) return;
       if (optIdx < 0 || optIdx >= q.opts.length) return;
       // Instant-feedback mode locks the first answer once the rationale is revealed
@@ -1701,11 +1744,11 @@
 
     function renderQuizQuestion() {
       if (!quizSession) return;
-      const q = quizSession.questions[quizSession.index];
-      const total = quizSession.questions.length;
+      const q = quizCur();
+      const total = quizSession.order.length;
       const meta = DOMAIN_META[q.domain] || DOMAIN_META[1];
 
-      document.getElementById('quiz-progress-pill').textContent = `Question ${quizSession.index + 1} of ${total}`;
+      document.getElementById('quiz-progress-pill').textContent = `${quizSession.phase === 'blind' ? 'Blind review' : 'Question'} ${quizSession.index + 1} of ${total}`;
       document.getElementById('quiz-domain-pill').textContent = `${meta.code} ${meta.name}`;
       document.getElementById('quiz-question-stem').textContent = q.q;
       registerQuestion(q);
@@ -1753,18 +1796,43 @@
       }
 
       document.getElementById('btn-quiz-prev').disabled = quizSession.index === 0;
-      document.getElementById('btn-quiz-next').textContent =
-        quizSession.index === total - 1 ? 'Finish & Review Quiz ✓' : 'Next Question →';
+      const lastQ = quizSession.index === total - 1;
+      let nextLabel = 'Next Question →';
+      if (lastQ) nextLabel = quizSession.mode === 'instant' ? 'Finish & Review Quiz ✓' : quizSession.phase === 'blind' ? 'Finish Blind Review ✓' : 'Review & Submit →';
+      document.getElementById('btn-quiz-next').textContent = nextLabel;
+      const flagBtn = document.getElementById('btn-quiz-flag');
+      flagBtn.classList.toggle('hidden', quizSession.mode === 'instant' || quizSession.phase === 'blind');
+      flagBtn.textContent = q.flagged ? '⚑ Flagged' : '⚑ Flag';
+      flagBtn.className = (quizSession.mode === 'instant' || quizSession.phase === 'blind' ? 'hidden ' : '') + (q.flagged
+        ? 'px-3 py-1 rounded-lg bg-amber-500/25 text-xs font-bold text-amber-300 border border-amber-500/50'
+        : 'px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-amber-300 border border-slate-700');
+      const noteEl = document.getElementById('quiz-phase-note');
+      if (quizSession.phase === 'blind') {
+        noteEl.classList.remove('hidden');
+        noteEl.textContent = 'Blind review: re-answer the questions you flagged. No answers are shown yet. Your first-pass answers are what count toward your progress.';
+      } else if (quizSession.mode !== 'instant') {
+        noteEl.classList.remove('hidden');
+        noteEl.textContent = quizSession.mode === 'blind'
+          ? 'No feedback until you submit. Flag any question you are unsure about; you can re-answer the flagged ones after submitting.'
+          : 'No feedback until you submit. You can change answers and flag questions before submitting.';
+      } else {
+        noteEl.classList.add('hidden');
+      }
     }
 
     function finishPracticeQuiz() {
       if (!quizSession) return;
       if (quizTimerInterval) clearInterval(quizTimerInterval);
-
-      let correctCount = 0;
-      for (const q of quizSession.questions) {
-        const isCorrect = q.userChoice === q.ans;
-        if (isCorrect) correctCount += 1;
+      document.getElementById('quiz-review-panel').classList.add('hidden');
+      const sess = quizSession;
+      let firstPass = 0;
+      let finalCorrect = 0;
+      for (const q of sess.questions) {
+        // Progress counts the first-pass answer; blind review changes the displayed score only
+        const chosen = q.origChoice !== undefined ? q.origChoice : q.userChoice;
+        const isCorrect = chosen === q.ans;
+        if (isCorrect) firstPass += 1;
+        if (q.userChoice === q.ans) finalCorrect += 1;
 
         const dom = q.domain || 1;
         appState.domains[dom].total += 1;
@@ -1773,21 +1841,51 @@
         recordConceptAttempt(appState, q, isCorrect);
       }
 
+      const totalQ = sess.questions.length;
+      const hasBlind = sess.questions.some((q) => q.origChoice !== undefined);
+      const att = {
+        id: 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        ts: Date.now(),
+        kind: 'quiz',
+        title: sess.title || 'Practice Quiz',
+        mode: sess.mode,
+        modeLabel: modeLabel(sess.mode),
+        size: totalQ,
+        correct: finalCorrect,
+        total: totalQ,
+        pct: totalQ ? Math.round((finalCorrect / totalQ) * 100) : 0,
+        secs: Math.round((Date.now() - sess.startedAt) / 1000),
+        items: sess.questions.map(serializeItem)
+      };
+      if (hasBlind) att.blind = { orig: firstPass, final: finalCorrect };
+      recordAttempt(att);
+
       appState.overall.correct = [1, 2, 3, 4, 5].reduce((acc, d) => acc + appState.domains[d].correct, 0);
       appState.overall.total = [1, 2, 3, 4, 5].reduce((acc, d) => acc + appState.domains[d].total, 0);
       saveAppState(appState);
       renderDashboard();
 
-      const completedQuestions = quizSession.questions;
+      const completedQuestions = sess.questions;
       quizSession = null;
 
       document.getElementById('quiz-runner-panel').classList.add('hidden');
       const resultsEl = document.getElementById('quiz-results-panel');
       resultsEl.classList.remove('hidden');
-      renderItemizedReview(resultsEl, 'Practice Quiz Complete', completedQuestions, 'quiz');
+      let banner = '';
+      if (hasBlind) {
+        const p1 = totalQ ? Math.round((firstPass / totalQ) * 100) : 0;
+        const delta = finalCorrect - firstPass;
+        banner = `<div class="glass-card rounded-2xl p-4 border border-indigo-500/40 text-sm text-slate-200">
+          <strong class="text-indigo-300">Blind review result:</strong>
+          original score <strong>${firstPass}/${totalQ} (${p1}%)</strong> &rarr; after blind review <strong>${finalCorrect}/${totalQ} (${att.pct}%)</strong>
+          <span class="${delta >= 0 ? 'text-emerald-400' : 'text-rose-400'} font-bold">(${delta >= 0 ? '+' : ''}${delta})</span>
+          <p class="text-xs text-slate-400 mt-1">Your progress statistics use the original answers.</p>
+        </div>`;
+      }
+      renderItemizedReview(resultsEl, 'Practice Quiz Complete', completedQuestions, 'quiz', banner);
     }
 
-    function renderItemizedReview(container, title, questions, sourceType) {
+    function renderItemizedReview(container, title, questions, sourceType, extraHTML = '') {
       const total = questions.length;
       const correct = questions.filter((q) => q.userChoice === q.ans).length;
       const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
@@ -1804,9 +1902,10 @@
             <button data-action="filter-review" data-filter="all" class="review-filter-btn px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-semibold">All (${total})</button>
             <button data-action="filter-review" data-filter="missed" class="review-filter-btn px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">Missed Only (${total - correct})</button>
             <button data-action="filter-review" data-filter="correct" class="review-filter-btn px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">Correct Only (${correct})</button>
-            <button data-action="${sourceType === 'exam' ? 'reset-exams-view' : 'reset-quiz-view'}" class="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold">New Session</button>
+            <button data-action="${sourceType === 'exam' ? 'reset-exams-view' : sourceType === 'history' ? 'history-back' : 'reset-quiz-view'}" class="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold">${sourceType === 'history' ? 'Back to History' : 'New Session'}</button>
           </div>
         </div>
+        ${extraHTML}
         <div id="review-cards-list" class="space-y-4"></div>
       `;
 
@@ -1852,6 +1951,7 @@
             <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800 text-xs text-slate-300">
               <strong class="text-indigo-300">Rationale:</strong> ${escapeHTML(q.exp)}
             </div>
+            <button data-action="report-question" data-qid="${escapeHTML(q.id)}" class="mt-3 mr-2 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-300">Report this question</button>
             ${qObj ? `<button data-action="open-guide" data-obj="${escapeHTML(qObj)}" class="mt-3 px-3 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/40 border border-indigo-500/40 text-xs font-semibold text-indigo-200">Study guide: Obj ${escapeHTML(qObj)} ↗</button>` : ''}
           </div>
         `;
@@ -1901,6 +2001,8 @@
         const rem = Math.max(0, Math.ceil((examSession.endAt - Date.now()) / 1000));
         examSession.secondsRemaining = rem;
         document.getElementById('exam-clock').textContent = clockText(rem);
+        const rvc = document.getElementById('exam-review-clock');
+        if (rvc) rvc.textContent = clockText(rem);
         if (rem <= 0) {
           clearInterval(examTimerInterval);
           submitFullExam();
@@ -1924,6 +2026,7 @@
       document.getElementById('exam-item-counter').textContent = `Item ${examSession.index + 1} / ${total}`;
       document.getElementById('exam-item-type-badge').textContent = item.kind === 'pbq' ? 'PBQ Simulation' : `Domain ${item.question.domain}.0 MCQ`;
 
+      document.getElementById('btn-exam-next').textContent = examSession.index === total - 1 ? 'Review All Items →' : 'Next Item →';
       const flagBtn = document.getElementById('btn-exam-flag');
       flagBtn.textContent = item.flagged ? '⚑ Flagged' : '⚑ Flag';
       flagBtn.className = item.flagged
@@ -1980,6 +2083,9 @@
       if (!examSession) return;
       if (examTimerInterval) clearInterval(examTimerInterval);
       document.getElementById('exam-submit-modal')?.classList.add('hidden');
+      document.getElementById('exam-review-panel')?.classList.add('hidden');
+      const examStarted = examSession.startedAt || Date.now();
+      const examSecsUsed = Math.max(0, 90 * 60 - (examSession.secondsRemaining || 0));
 
       let earnedPoints = 0;
       let maxPoints = 0;
@@ -2000,6 +2106,7 @@
           const q = it.question;
           const isRight = q.userChoice === q.ans;
           if (isRight) earnedPoints += 1;
+          q.flagged = !!it.flagged;
           reviewQuestions.push(q);
 
           const dom = q.domain || 1;
@@ -2022,6 +2129,23 @@
         pct,
         scaled,
         date: new Date().toLocaleDateString()
+      });
+      const mcqCorrect = reviewQuestions.filter((q) => q.userChoice === q.ans).length;
+      recordAttempt({
+        id: 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        ts: Date.now(),
+        kind: 'exam',
+        title: `Full Exam #${examSession.profile.num}`,
+        mode: 'exam',
+        modeLabel: 'Full exam (3 PBQs + MCQs)',
+        size: reviewQuestions.length,
+        correct: mcqCorrect,
+        total: reviewQuestions.length,
+        pct: reviewQuestions.length ? Math.round((mcqCorrect / reviewQuestions.length) * 100) : 0,
+        scaled,
+        secs: examSecsUsed || Math.round((Date.now() - examStarted) / 1000),
+        pbq: pbqResults.map((r) => ({ id: r.lab.id, ratio: Math.round(r.ratio * 100) / 100 })),
+        items: reviewQuestions.map(serializeItem)
       });
 
       saveAppState(appState);
@@ -3137,12 +3261,14 @@
         profile,
         items: [...pbqs, ...mcqs],
         index: 0,
+        startedAt: Date.now(),
         secondsRemaining: 90 * 60,
         paused: false
       };
 
       document.getElementById('exams-selector-panel').classList.add('hidden');
       document.getElementById('exam-results-panel').classList.add('hidden');
+      document.getElementById('exam-review-panel').classList.add('hidden');
       document.getElementById('exam-runner-panel').classList.remove('hidden');
 
       renderExamItem();
@@ -3234,6 +3360,7 @@
 
       if (tabName === 'dashboard') renderDashboard();
       if (tabName === 'exams') renderExamsGrid();
+      if (tabName === 'history') renderHistoryTab();
       if (tabName === 'pbq') renderPbqLabTab();
       if (tabName === 'flashcards') renderFlashcards();
       if (tabName === 'notes') renderNotesTab();
@@ -3269,18 +3396,52 @@
           renderQuizQuestion();
         }
       } else if (action === 'quiz-next') {
-        if (!quizSession) return;
-        if (quizSession.index < quizSession.questions.length - 1) {
-          quizSession.index += 1;
-          renderQuizQuestion();
-          startQuizTimerIfNeeded();
-        } else {
-          finishPracticeQuiz();
-        }
+        quizStepForward();
+      } else if (action === 'quiz-toggle-flag') {
+        const cq = quizCur();
+        if (cq && quizSession.phase !== 'blind') { cq.flagged = !cq.flagged; renderQuizQuestion(); }
+      } else if (action === 'quiz-submit') {
+        quizSubmit();
+      } else if (action === 'review-jump') {
+        if (btn.dataset.kind === 'exam') examReviewJump(Number(btn.dataset.idx));
+        else quizReviewJump(Number(btn.dataset.idx));
+      } else if (action === 'review-filter') {
+        const f = btn.dataset.filter;
+        const panel = btn.closest('#exam-review-panel, #quiz-review-panel');
+        panel.querySelectorAll('.rs-filter-btn').forEach((b) => {
+          b.className = 'rs-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold ' + (b.dataset.filter === f ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300');
+        });
+        panel.querySelectorAll('.review-row').forEach((r) => {
+          const st = r.dataset.status.split(' ');
+          r.classList.toggle('hidden', !(f === 'all' || st.includes(f)));
+        });
+      } else if (action === 'report-question') {
+        let rq = null;
+        if (btn.dataset.qid) rq = findQuestionById(btn.dataset.qid);
+        else if (btn.dataset.from === 'quiz') rq = quizCur();
+        else if (btn.dataset.from === 'exam' && examSession) { const it = examSession.items[examSession.index]; rq = it && it.kind === 'mcq' ? it.question : null; }
+        openQuestionReport(rq);
+      } else if (action === 'qreport-cancel') {
+        document.getElementById('qreport-modal').classList.add('hidden');
+      } else if (action === 'qreport-send') {
+        sendQuestionReport();
+      } else if (action === 'history-open') {
+        historyOpen(btn.dataset.id);
+      } else if (action === 'history-back') {
+        renderHistoryTab();
+      } else if (action === 'history-retake') {
+        historyRetake(btn.dataset.id, false);
+      } else if (action === 'history-retake-missed') {
+        historyRetake(btn.dataset.id, true);
+      } else if (action === 'heat-practice') {
+        switchTab('quiz');
+        document.getElementById('quiz-count-select').value = '10';
+        startPracticeQuiz('obj:' + btn.dataset.obj);
       } else if (action === 'quit-quiz' || action === 'reset-quiz-view') {
         if (quizTimerInterval) clearInterval(quizTimerInterval);
         quizSession = null;
         document.getElementById('quiz-runner-panel').classList.add('hidden');
+        document.getElementById('quiz-review-panel').classList.add('hidden');
         document.getElementById('quiz-results-panel').classList.add('hidden');
         document.getElementById('quiz-setup-panel').classList.remove('hidden');
       } else if (action === 'filter-review') {
@@ -3312,6 +3473,8 @@
         if (examSession && examSession.index < examSession.items.length - 1) {
           examSession.index += 1;
           renderExamItem();
+        } else if (examSession) {
+          openExamReview();
         }
       } else if (action === 'exam-jump') {
         if (examSession) {
@@ -3323,6 +3486,8 @@
           examSession.items[examSession.index].flagged = !examSession.items[examSession.index].flagged;
           renderExamItem();
         }
+      } else if (action === 'exam-open-review') {
+        openExamReview();
       } else if (action === 'exam-submit-confirm') {
         if (!examSession) return;
         const unanswered = examSession.items.filter((it) => !isExamItemAnswered(it)).length;
@@ -3337,7 +3502,7 @@
         document.getElementById('exam-submit-modal').classList.add('hidden');
         if (examSession) {
           const firstIdx = examSession.items.findIndex((it) => !isExamItemAnswered(it));
-          if (firstIdx >= 0) { examSession.index = firstIdx; renderExamItem(); }
+          if (firstIdx >= 0) examReviewJump(firstIdx);
         }
       } else if (action === 'exam-submit-final') {
         document.getElementById('exam-submit-modal').classList.add('hidden');
@@ -3633,13 +3798,366 @@
     });
 
     /* =========================================================================
+       V11.1: FLAG + REVIEW SCREEN, NO-FEEDBACK + BLIND REVIEW, QUIZ HISTORY,
+       OBJECTIVE HEATMAP, REPORT THIS QUESTION
+       ========================================================================= */
+    const ATTEMPT_LIMIT = 50;
+    let bankByIdCache = null;
+    function bankById(id) {
+      if (!bankByIdCache) bankByIdCache = new Map(BUILTIN_QUESTIONS.map((q) => [q.id, q]));
+      return bankByIdCache.get(id) || null;
+    }
+
+    function quizCur() {
+      if (!quizSession) return null;
+      return quizSession.questions[quizSession.order[quizSession.index]];
+    }
+
+    function modeLabel(mode) {
+      return mode === 'blind' ? 'No-feedback + blind review' : mode === 'exam' ? 'No-feedback (grade at end)' : 'Instant feedback';
+    }
+
+    function beginQuiz(selected, mode, timed, title) {
+      selected.forEach(noteSeen);
+      quizSession = {
+        questions: selected,
+        order: selected.map((_, i) => i),
+        index: 0,
+        mode,
+        timed,
+        title: title || 'Practice Quiz',
+        startedAt: Date.now(),
+        phase: 'answering',
+        totalSeconds: timed ? 90 * selected.length : 0,
+        endAt: 0,
+        remaining: 0,
+        paused: false
+      };
+      document.getElementById('quiz-setup-panel').classList.add('hidden');
+      document.getElementById('quiz-results-panel').classList.add('hidden');
+      document.getElementById('quiz-review-panel').classList.add('hidden');
+      document.getElementById('quiz-runner-panel').classList.remove('hidden');
+      renderQuizQuestion();
+      startQuizTimerIfNeeded();
+    }
+
+    function quizStepForward() {
+      if (!quizSession) return;
+      if (quizSession.index < quizSession.order.length - 1) {
+        quizSession.index += 1;
+        renderQuizQuestion();
+        startQuizTimerIfNeeded();
+      } else if (quizSession.mode === 'instant' || quizSession.phase === 'blind') {
+        finishPracticeQuiz();
+      } else {
+        openQuizReview();
+      }
+    }
+
+    /* ---------- shared review screen (quiz and exam) ---------- */
+    function reviewRowsHTML(kind, rows) {
+      return rows.map((r) => `
+        <button data-action="review-jump" data-kind="${kind}" data-idx="${r.idx}" data-status="${r.answered ? 'answered' : 'unanswered'}${r.flagged ? ' flagged' : ''}" class="review-row w-full text-left px-3 py-2 rounded-xl border border-slate-700 bg-slate-900/80 hover:border-indigo-500/60 flex flex-wrap items-center gap-2 text-xs">
+          <span class="font-mono font-bold text-slate-300 w-9">#${r.idx + 1}</span>
+          <span class="text-slate-400">${escapeHTML(r.label)}</span>
+          <span class="ml-auto flex items-center gap-1.5">
+            ${r.flagged ? '<span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold">Flagged</span>' : ''}
+            <span class="px-2 py-0.5 rounded-full font-bold ${r.answered ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}">${r.answered ? 'Answered' : 'Unanswered'}</span>
+          </span>
+        </button>`).join('');
+    }
+
+    function reviewFiltersHTML(rows) {
+      const un = rows.filter((r) => !r.answered).length;
+      const fl = rows.filter((r) => r.flagged).length;
+      const b = (f, t, on) => `<button data-action="review-filter" data-filter="${f}" class="rs-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold ${on ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300'}">${t}</button>`;
+      return b('all', `All (${rows.length})`, true) + b('flagged', `Flagged (${fl})`, false) + b('unanswered', `Unanswered (${un})`, false);
+    }
+
+    function openQuizReview() {
+      if (!quizSession) return;
+      quizSession.phase = 'review';
+      const rows = quizSession.order.map((qi, idx) => {
+        const q = quizSession.questions[qi];
+        const meta = DOMAIN_META[q.domain] || DOMAIN_META[1];
+        return { idx, label: `${meta.code} ${meta.name}`, answered: q.userChoice !== null, flagged: !!q.flagged };
+      });
+      const un = rows.filter((r) => !r.answered).length;
+      const fl = rows.filter((r) => r.flagged).length;
+      const blindNote = quizSession.mode === 'blind' ? ' After you submit, you can re-answer the flagged questions before any answer is shown.' : '';
+      const panel = document.getElementById('quiz-review-panel');
+      panel.innerHTML = `
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 class="text-base font-bold text-white">Review your answers</h3>
+            <p class="text-xs text-slate-400 mt-1">${un} unanswered and ${fl} flagged of ${rows.length}.${blindNote}</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">${reviewFiltersHTML(rows)}</div>
+        </div>
+        <div class="space-y-1.5 max-h-[55vh] overflow-y-auto scrollbar-thin" id="quiz-review-rows">${reviewRowsHTML('quiz', rows)}</div>
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-800">
+          <button data-action="review-jump" data-kind="quiz" data-idx="${rows.length - 1}" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700">Back to questions</button>
+          <button data-action="quiz-submit" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white">Submit quiz</button>
+        </div>`;
+      document.getElementById('quiz-runner-panel').classList.add('hidden');
+      panel.classList.remove('hidden');
+    }
+
+    function quizSubmit() {
+      if (!quizSession) return;
+      document.getElementById('quiz-review-panel').classList.add('hidden');
+      if (quizSession.mode === 'blind') {
+        const flaggedIdx = quizSession.questions.map((q, i) => (q.flagged ? i : -1)).filter((i) => i >= 0);
+        if (flaggedIdx.length > 0) {
+          quizSession.questions.forEach((q) => { q.origChoice = q.userChoice; });
+          quizSession.order = flaggedIdx;
+          quizSession.index = 0;
+          quizSession.phase = 'blind';
+          document.getElementById('quiz-runner-panel').classList.remove('hidden');
+          renderQuizQuestion();
+          return;
+        }
+      }
+      finishPracticeQuiz();
+    }
+
+    function openExamReview() {
+      if (!examSession) return;
+      const rows = examSession.items.map((it, idx) => ({
+        idx,
+        label: it.kind === 'pbq' ? `PBQ: ${it.lab.title.replace(/^PBQ #\d+:\s*/, '')}` : `Domain ${it.question.domain}.0 MCQ`,
+        answered: isExamItemAnswered(it),
+        flagged: !!it.flagged
+      }));
+      const un = rows.filter((r) => !r.answered).length;
+      const fl = rows.filter((r) => r.flagged).length;
+      const panel = document.getElementById('exam-review-panel');
+      panel.innerHTML = `
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 class="text-base font-bold text-white">Review your answers</h3>
+            <p class="text-xs text-slate-400 mt-1">${un} unanswered and ${fl} flagged of ${rows.length}. Select any item to return to it. The clock keeps running.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span id="exam-review-clock" class="font-mono text-sm font-bold px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-emerald-400">${clockText(examSession.secondsRemaining)}</span>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">${reviewFiltersHTML(rows)}</div>
+        <div class="space-y-1.5 max-h-[55vh] overflow-y-auto scrollbar-thin" id="exam-review-rows">${reviewRowsHTML('exam', rows)}</div>
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-800">
+          <button data-action="review-jump" data-kind="exam" data-idx="${examSession.index}" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700">Return to exam</button>
+          <button data-action="exam-submit-confirm" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white">Submit exam</button>
+        </div>`;
+      document.getElementById('exam-runner-panel').classList.add('hidden');
+      panel.classList.remove('hidden');
+    }
+
+    function examReviewJump(idx) {
+      if (!examSession) return;
+      examSession.index = Math.max(0, Math.min(examSession.items.length - 1, idx));
+      document.getElementById('exam-review-panel').classList.add('hidden');
+      document.getElementById('exam-runner-panel').classList.remove('hidden');
+      renderExamItem();
+    }
+
+    function quizReviewJump(idx) {
+      if (!quizSession) return;
+      quizSession.phase = quizSession.phase === 'review' ? 'answering' : quizSession.phase;
+      quizSession.index = Math.max(0, Math.min(quizSession.order.length - 1, idx));
+      document.getElementById('quiz-review-panel').classList.add('hidden');
+      document.getElementById('quiz-runner-panel').classList.remove('hidden');
+      renderQuizQuestion();
+    }
+
+    /* ---------- quiz history ---------- */
+    function serializeItem(q) {
+      const base = bankById(q.id);
+      const item = { id: q.id, u: q.userChoice === null || q.userChoice === undefined ? -1 : q.userChoice, f: q.flagged ? 1 : 0 };
+      if (q.origChoice !== undefined) item.o = q.origChoice === null ? -1 : q.origChoice;
+      let perm = null;
+      if (base && base.opts.length === q.opts.length) {
+        perm = q.opts.map((t) => base.opts.indexOf(t));
+        if (perm.some((i) => i < 0) || new Set(perm).size !== perm.length) perm = null;
+      }
+      if (perm) item.p = perm;
+      else item.s = { id: q.id, domain: q.domain, concept: q.concept, obj: q.obj, q: q.q, opts: q.opts, ans: q.ans, exp: q.exp };
+      return item;
+    }
+
+    function recordAttempt(att) {
+      appState.attempts = Array.isArray(appState.attempts) ? appState.attempts : [];
+      appState.attempts.unshift(att);
+      appState.attempts.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+      appState.attempts = appState.attempts.slice(0, ATTEMPT_LIMIT);
+    }
+
+    function attemptQuestions(att) {
+      const out = [];
+      for (const it of att.items || []) {
+        const base = bankById(it.id);
+        let q = null;
+        if (it.p && base) q = { ...base, opts: it.p.map((i) => base.opts[i]), ans: it.p.indexOf(base.ans) };
+        else if (it.s) q = { ...it.s };
+        if (!q) continue;
+        q.userChoice = it.u >= 0 ? it.u : null;
+        q.flagged = !!it.f;
+        if (it.o !== undefined) q.origChoice = it.o >= 0 ? it.o : null;
+        out.push(q);
+      }
+      return out;
+    }
+
+    function fmtDuration(s) {
+      s = Math.max(0, Math.round(Number(s) || 0));
+      const h = Math.floor(s / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      const sec = s % 60;
+      return h > 0 ? `${h}h ${String(m).padStart(2, '0')}m` : `${m}m ${String(sec).padStart(2, '0')}s`;
+    }
+
+    function renderHistoryTab() {
+      const listEl = document.getElementById('history-list');
+      const detail = document.getElementById('history-detail');
+      if (!listEl) return;
+      detail.classList.add('hidden');
+      listEl.classList.remove('hidden');
+      const atts = Array.isArray(appState.attempts) ? appState.attempts : [];
+      document.getElementById('history-count').textContent = `${atts.length} of ${ATTEMPT_LIMIT} saved`;
+      if (atts.length === 0) {
+        listEl.innerHTML = '<div class="glass-card rounded-2xl p-6 text-sm text-slate-400">No attempts saved yet. Finish a practice quiz or a full exam and it will appear here.</div>';
+        return;
+      }
+      listEl.innerHTML = atts.map((a) => {
+        const missed = (a.items || []).filter((it) => {
+          const q = attemptQuestions({ items: [it] })[0];
+          return q && q.userChoice !== q.ans;
+        }).length;
+        const good = a.pct >= 80 ? 'text-emerald-400' : a.pct >= 60 ? 'text-amber-400' : 'text-rose-400';
+        return `
+          <div class="glass-card rounded-2xl p-4 space-y-2" data-attempt-id="${escapeHTML(a.id)}">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded-md text-[11px] font-bold ${a.kind === 'exam' ? 'bg-amber-500/20 text-amber-300' : 'bg-indigo-500/20 text-indigo-300'}">${a.kind === 'exam' ? 'Full exam' : 'Practice quiz'}</span>
+                <span class="text-sm font-bold text-white">${escapeHTML(a.title || '')}</span>
+              </div>
+              <span class="font-mono text-sm font-bold ${good}">${a.correct}/${a.total} (${a.pct}%)${a.scaled ? ` · ${a.scaled}/900` : ''}</span>
+            </div>
+            <div class="text-[11px] text-slate-400">${new Date(a.ts).toLocaleString()} &bull; ${a.size} questions &bull; ${escapeHTML(a.modeLabel || '')} &bull; time ${fmtDuration(a.secs)}${a.blind ? ` &bull; blind review ${a.blind.orig}/${a.total} → ${a.blind.final}/${a.total}` : ''}</div>
+            <div class="flex flex-wrap gap-2 pt-1">
+              <button data-action="history-open" data-id="${escapeHTML(a.id)}" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700">Open</button>
+              <button data-action="history-retake" data-id="${escapeHTML(a.id)}" class="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white">Retake same set</button>
+              <button data-action="history-retake-missed" data-id="${escapeHTML(a.id)}" ${missed === 0 ? 'disabled' : ''} class="px-3 py-1.5 rounded-xl bg-rose-600/80 hover:bg-rose-500 text-xs font-bold text-white disabled:opacity-40">Retake missed (${missed})</button>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function historyFind(id) {
+      return (appState.attempts || []).find((a) => a.id === id) || null;
+    }
+
+    function historyOpen(id) {
+      const a = historyFind(id);
+      if (!a) return;
+      const qs = attemptQuestions(a);
+      document.getElementById('history-list').classList.add('hidden');
+      const detail = document.getElementById('history-detail');
+      detail.classList.remove('hidden');
+      renderItemizedReview(detail, `${a.title} · ${new Date(a.ts).toLocaleDateString()}`, qs, 'history');
+    }
+
+    function historyRetake(id, missedOnly) {
+      const a = historyFind(id);
+      if (!a) return;
+      let qs = attemptQuestions(a);
+      if (missedOnly) qs = qs.filter((q) => q.userChoice !== q.ans);
+      if (qs.length === 0) { showToast('Nothing to retake in this attempt.', 'info'); return; }
+      const fresh = qs.map((q) => fisherYatesShuffleQuestion({ ...q, userChoice: null }));
+      switchTab('quiz');
+      const mode = a.mode === 'instant' ? 'instant' : 'exam';
+      beginQuiz(fresh, mode, false, `${missedOnly ? 'Retake missed' : 'Retake'}: ${a.title}`);
+    }
+
+    /* ---------- objective heatmap ---------- */
+    function renderObjectiveHeatmap() {
+      const el = document.getElementById('objective-heatmap');
+      if (!el) return;
+      const conceptObj = {};
+      for (const q of BUILTIN_QUESTIONS) if (q.concept && q.obj) conceptObj[q.concept] = q.obj;
+      if (typeof CALC_CONCEPTS !== 'undefined') for (const [k, v] of Object.entries(CALC_CONCEPTS)) conceptObj[k] = v.obj;
+      const agg = {};
+      for (const [cid, st] of Object.entries(appState.conceptStats || {})) {
+        const obj = conceptObj[cid];
+        if (!obj) continue;
+        agg[obj] = agg[obj] || { c: 0, t: 0 };
+        agg[obj].c += Number(st.c) || 0;
+        agg[obj].t += Number(st.t) || 0;
+      }
+      const objs = STUDY_GUIDE.filter((g) => /^\d\.\d+$/.test(g.id));
+      el.innerHTML = [1, 2, 3, 4, 5].map((d) => {
+        const meta = DOMAIN_META[d];
+        const cells = objs.filter((g) => g.domain === d).map((g) => {
+          const a = agg[g.id];
+          const pct = a && a.t > 0 ? Math.round((a.c / a.t) * 100) : null;
+          let cls = 'bg-slate-900 border-slate-700 text-slate-500';
+          if (pct !== null) cls = pct >= 80 ? 'bg-emerald-600/30 border-emerald-500/60 text-emerald-200' : pct >= 65 ? 'bg-lime-600/25 border-lime-500/50 text-lime-200' : pct >= 50 ? 'bg-amber-600/25 border-amber-500/50 text-amber-200' : 'bg-rose-600/30 border-rose-500/60 text-rose-200';
+          return `<button data-action="heat-practice" data-obj="${g.id}" title="${escapeHTML(g.title)}${a ? ` — ${a.c}/${a.t} correct` : ' — no attempts yet'}" class="heat-cell rounded-lg border px-2 py-1.5 text-center transition hover:brightness-125 ${cls}">
+            <div class="text-[11px] font-bold font-mono">${g.id}</div>
+            <div class="text-xs font-bold">${pct === null ? '—' : pct + '%'}</div>
+            <div class="text-[10px] opacity-70">${a ? a.t : 0} tries</div>
+          </button>`;
+        }).join('');
+        return `<div class="flex flex-wrap items-center gap-2"><span class="w-full sm:w-44 text-xs font-semibold text-slate-300">${meta.code} ${escapeHTML(meta.name)}</span><div class="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-1.5 flex-1">${cells}</div></div>`;
+      }).join('');
+    }
+
+    /* ---------- report this question ---------- */
+    let reportTarget = null;
+    function openQuestionReport(q) {
+      if (!q) { showToast('Reports are only available for multiple-choice questions.', 'info'); return; }
+      reportTarget = q;
+      document.getElementById('qreport-stem').textContent = q.q;
+      document.getElementById('qreport-detail').value = '';
+      document.getElementById('qreport-modal').classList.remove('hidden');
+    }
+
+    async function sendQuestionReport() {
+      const q = reportTarget;
+      const FB = cloudFB();
+      const u = cloudState && cloudState.user;
+      if (!q) return;
+      if (demoMode) { showToast('Demo mode: reports are disabled.', 'info'); return; }
+      if (!u || !FB || !FB.addReport) { showToast('Sign in first to send a report.', 'warn'); return; }
+      if (Date.now() - lastBugAt < 30000) { showToast('Please wait a few seconds before sending another report.', 'warn'); return; }
+      const kind = document.getElementById('qreport-kind').value;
+      const detail = document.getElementById('qreport-detail').value.trim().slice(0, 1200);
+      const message = `[Question ${q.id} | concept ${q.concept || ''} | obj ${q.obj || ''}] ${kind}\nStem: ${String(q.q).slice(0, 300)}\n${detail}`;
+      const btn = document.getElementById('qreport-send');
+      btn.disabled = true;
+      try {
+        await FB.addReport({
+          uid: u.uid, email: u.email || '', name: appState.profileName || u.name || '',
+          message, category: 'content', version: APP_VERSION,
+          ua: String(navigator.userAgent).slice(0, 200), tab: activeTab, status: 'new', createdAt: Date.now()
+        });
+        lastBugAt = Date.now();
+        document.getElementById('qreport-modal').classList.add('hidden');
+        showToast('Report sent. Thank you!', 'success');
+      } catch (err) {
+        showToast('Could not send the report. Check your connection and try again.', 'error');
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    /* =========================================================================
        17a. V8: TIMERS, NOTEBOOKS, SETTINGS, BUG REPORTS, ADMIN + DEMO MODE
        ========================================================================= */
     var demoMode = false;   // var on purpose: saveAppState checks it during boot
     var demoStash = null;
     var demoLevel = null;
     var demoQueue = [];
-    const APP_VERSION = 'V10.3';
+    const APP_VERSION = 'V11.1';
 
     function pad2(n) { return String(n).padStart(2, '0'); }
     function clockText(sec) {
@@ -3956,6 +4474,8 @@
       quizSession = null;
       examSession = null;
       document.getElementById('quiz-runner-panel').classList.add('hidden');
+      document.getElementById('quiz-review-panel').classList.add('hidden');
+      document.getElementById('exam-review-panel').classList.add('hidden');
       document.getElementById('quiz-results-panel').classList.add('hidden');
       document.getElementById('quiz-setup-panel').classList.remove('hidden');
       document.getElementById('exam-runner-panel').classList.add('hidden');
@@ -4477,6 +4997,7 @@
       for (const id of state.guideReviewed || []) add('guide', id, { v: true });
       for (const n of state.notes || []) if (n && n.id) add('note', n.id, { note: n });
       for (const e of state.examHistory || []) add('exam', cloudExamId(e), { entry: { ...e, id: cloudExamId(e) } });
+      for (const a of state.attempts || []) if (a && a.id) add('exam', 'a_' + a.id, { attempt: a });
       return out;
     }
 
@@ -4600,6 +5121,16 @@
           }
         } else if (coll === 'profile') {
           if (typeof d.name === 'string' && d.name.trim()) appState.profileName = d.name.trim().slice(0, 40);
+        } else if (coll === 'exam' && d.attempt) {
+          const at = d.attempt;
+          if (at && at.id && Array.isArray(at.items)) {
+            appState.attempts = Array.isArray(appState.attempts) ? appState.attempts : [];
+            if (!appState.attempts.some((x) => x.id === at.id)) {
+              appState.attempts.push(at);
+              appState.attempts.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+              appState.attempts = appState.attempts.slice(0, ATTEMPT_LIMIT);
+            }
+          }
         } else if (coll === 'exam') {
           if (d.entry && !appState.examHistory.some((e) => cloudExamId(e) === ch.id)) {
             appState.examHistory.push(d.entry);
@@ -4627,6 +5158,7 @@
         if (activeTab === 'notes') renderNotesTab();
         if (activeTab === 'guide') renderStudyGuide();
         if (activeTab === 'pbq') renderPbqLabTab();
+        if (activeTab === 'history') renderHistoryTab();
       } catch (e) { /* UI refresh is best-effort */ }
     }
 
